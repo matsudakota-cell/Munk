@@ -35,10 +35,10 @@ test('real character rigs render reaction states, freeze on pause, and recover o
     }
     const THREE={...RealThree,WebGLRenderer:TestRenderer};
   `);
-  for(const name of ['game-core.mjs','monkey-personality.mjs']){
+  for(const name of ['game-core.mjs','monkey-personality.mjs','fisherman.mjs','fisherman-personality.mjs']){
     source=source.replace(`from './${name}'`,`from '${new URL('../public/'+name,import.meta.url).href}'`);
   }
-  const game=await import('data:text/javascript;base64,'+Buffer.from(source+'\nexport {state,scene,monkeys,birds};').toString('base64'));
+  const game=await import('data:text/javascript;base64,'+Buffer.from(source+'\nexport {state,scene,monkeys,birds,fishermanRig,fishermanHat};').toString('base64'));
   function advance(seconds){for(let n=0;n<Math.ceil(seconds/.02);n++){now+=20;frame(now)}}
   function key(code){listeners.get('keydown')({code,repeat:false,target:{tagName:'DIV'},preventDefault(){}})}
   const count=()=>{let n=0;game.scene.traverse(()=>n++);return n};
@@ -54,8 +54,20 @@ test('real character rigs render reaction states, freeze on pause, and recover o
   for(let n=0;n<25;n++){key(n%2?'Slash':'KeyQ');advance(3.1)}
   assert.equal(count(),objects,'replies reuse the existing meshes');
   assert.equal(nodes.get('toast').textContent,'','reaction events do not flood the mission toast');
+  Object.assign(game.state.players[0],{x:14,z:37,y:0});
+  game.state.fisherman.routine=7;
+  key('KeyE');advance(2.2);
+  assert.equal(game.fishermanHat.parent,game.monkeys[0].head);
+  assert(game.fishermanRig.mouth.scale.y>.1,'double take has a readable open mouth');
+  nodes.get('pause').onclick();const age=game.state.fisherman.reaction.age;
+  advance(1);assert.equal(game.state.fisherman.reaction.age,age);
+  nodes.get('resume').onclick();key('KeyE');advance(.1);
+  assert.equal(game.fishermanHat.parent,game.scene);
+  assert.equal(count(),objects,'hat exchanges reuse one model');
   key('KeyQ');nodes.get('restart').onclick();
   assert(game.state.players.every(p=>p.reaction===null));
   assert(game.state.birds.every(b=>b.scatter===null));
+  assert.equal(game.state.fisherman.hat.place,'stool');
+  assert(game.state.players.every(p=>p.heldItem===null));
   advance(.1);assert(window.munks.getState().running);
 });

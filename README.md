@@ -44,7 +44,15 @@ Try `Q` and `/` while the monkeys are near each other. Pip might take a bow, sal
 
 Nearby birds take off and drift back to their usual wandering. Repeated calls let an ongoing reaction finish; the replies never trigger endless automatic exchanges. Sound is optional—the acting works with it turned off.
 
-This is Phase 1 of the additive brief. Its playtest is still pending: let two children try the ook keys for five minutes and see whether the exchanges remain funny. Phase 2 (the first islander) waits for that playtest and the owner's approval.
+Phase 1 has been played by the children and approved for moving on.
+
+## Phase 2: the fisherman’s hat
+
+Find the fisherman beside the little pond to the right of Munks HQ, near the bottom of the island. His straw hat rests on a low stool. Walk up and press `E` or `Enter` to wear it. If he is looking toward shore, he makes a slow double-take. If he is watching the water, he only notices on his next glance at the stool.
+
+Use interact near the stool to put it back, or elsewhere to set it down for either monkey to pick up. Existing mission interactions keep priority. The hat follows the monkey through jumps, bonks, and ooks. The fisherman returns to fishing; he never chases. There is no reward or extra checklist entry. Restart resets the hat and fisherman along with the game.
+
+Phase 2 awaits the children’s playtest: is taking the hat funny on its own? Attention tiers and chasing wait for approval of this phase.
 
 ## Run locally
 
@@ -77,10 +85,14 @@ The tests cover response variety and rarity, repeatable reaction selection, inpu
 - `public/game.js` — Three.js scene, characters, animation, audio, camera, and input.
 - `public/game-core.mjs` — mission rules and gameplay simulation.
 - `public/monkey-personality.mjs` — Pip and Momo's expression and acting system.
+- `public/fisherman.mjs` — the single fisherman’s routine, sight checks, and hat ownership.
+- `public/fisherman-personality.mjs` — pure acting poses for idle and discovery beats.
 - `public/vendor/` — locally served Three.js runtime and its license.
 - `tests/` — gameplay and reaction checks using Node's built-in test runner.
 
 Ook response selection and bird reaction timing live in `game-core.mjs`; `pose()` in `monkey-personality.mjs` supplies acting values; `game.js` applies them to the existing models and plays sound. Proximity is checked when a player ooks, not every rendered frame. Reaction selection uses its own seeded sequence, independent of decoration randomness.
+
+The fisherman follows the same rules/acting/render split. His routine and discovery decisions tick at 8 Hz; taking the hat checks range and facing once at interaction time. Rendering interpolates the acting, with no raycasts, new dependencies, or loaded assets. Tests cover immediate versus delayed discovery, single hat ownership, returning and exchanging the hat, input freedom, and scene attachment through pause/restart. Humor still needs a family playtest.
 
 ## Design principles
 
