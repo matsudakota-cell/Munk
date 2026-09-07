@@ -1,4 +1,4 @@
-import {fishermanFacing} from './fisherman.mjs';
+import {fishermanFacing,attentionTier} from './fisherman.mjs';
 const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
 export function fishermanPose(f){
   const t=f.routine+f.clock;
@@ -9,11 +9,15 @@ export function fishermanPose(f){
   if(!f.reaction){
     if(t>3&&t<4.5)a.rightArm=-.85-Math.sin((t-3)/1.5*Math.PI)*1.3;
     a.headTurn=turn*.5;a.eyeOpen=Math.sin(t*2.2)> .98?.12:1;
+    const tier=f.lastNoticed===null?1:attentionTier(f.attention[f.lastNoticed]);
+    if(tier>1&&turn>.2){
+      a.eyeOpen*=.65;a.headTurn+=Math.sin(t*4)*.18;
+      a.brow=-.06;a.mouth=.025+Math.max(0,Math.sin(t*13))*.045;
+    }
     return a;
   }
   const age=f.reaction.age+f.clock;
   const first=smooth(age/.65),second=smooth((age-1.5)/.45),settle=1-smooth((age-3.8)/1.2);
-  a.facing=(f.reaction.startFacing??0)*(1-first)+Math.PI*smooth((age-4)/1);
   // Look, look away, then a bigger second look. A missing hat starts with a pat.
   a.headTurn=(first*.7-smooth((age-.85)/.4)*1.2+second*1.1)*settle;
   a.headTilt=(first*.15-second*.35)*settle;
@@ -22,5 +26,17 @@ export function fishermanPose(f){
   a.leftArm=-.65-second*1.5*settle;a.rightArm=-.85-second*1.3*settle;
   if(f.reaction.kind==='discover_missing'&&age<1.4)a.rightArm=-2.1;
   a.shrug=second*.65*settle;a.bounce=second*.12*settle;a.rod=second*.45*settle;
+  const tier=f.reaction.tier??1;
+  if(tier===2){
+    // Suspicious squint, left-right search, then a little mutter.
+    a.headTurn+=Math.sin(age*4)*.22*settle;
+    if(age>2.5){a.eyeOpen=.65;a.brow=-.06*settle;a.mouth=.025+Math.max(0,Math.sin(age*15))*.06*settle;}
+  }else if(tier===3){
+    // Full pantomime: rod droops, both hands fly up, moustache bobs.
+    a.leftArm=-.65-second*2.3*settle;a.rightArm=-.85-second*2.1*settle;
+    a.shrug=second*.9*settle;a.bounce=second*(.18+Math.abs(Math.sin(age*8))*.12)*settle;
+    a.mouth=.025+second*.3*settle;a.eyeOpen=1+second*.6*settle;
+    a.headTilt+=Math.sin(age*9)*.16*second*settle;a.rod=second*1.1*settle;
+  }
   return a;
 }

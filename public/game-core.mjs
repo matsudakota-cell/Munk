@@ -1,4 +1,4 @@
-import {createFisherman,interactHat,stepFisherman} from './fisherman.mjs';
+import {createFisherman,interactHat,stepFisherman,noticeMischief} from './fisherman.mjs';
 export const ZONES=[{id:'bells',name:'Canopy Club',x:-29,z:-28,color:'#ebc95b'},{id:'band',name:'Jungle Jam',x:28,z:-28,color:'#eb987c'},{id:'bubbles',name:'Bubble Works',x:-29,z:25,color:'#8edce3'},{id:'bowling',name:'Coconut Lanes',x:29,z:25,color:'#bfcc72'},{id:'bounce',name:'Cloud Hoppers',x:0,z:0,color:'#d2b3e9'}];
 export const PADS=[{x:-34,z:25},{x:-24,z:25}];
 export const LADDERS=[{x:-34,z:-23,top:7},{x:-24,z:-23,top:7}];
@@ -12,7 +12,7 @@ export function missions(s){return[{name:'Ring in a ridiculous morning',short:'T
 export function emit(s,text,type='info',x=0,z=0,details={}){if(type==='win'||type==='complete')s.players.forEach(p=>p.cheer=2.4);s.events.push({...details,text,type,x,z});if(s.events.length>20)s.events.shift()}
 export function nearZone(p){return [...ZONES].sort((a,b)=>dist(p,a)-dist(p,b))[0]}
 export function platformHeight(p){return p.x>-39&&p.x<-19&&p.z>-35&&p.z<-22?7:0}
-export function jump(s,i){const p=s.players[i];if(!p.air){p.vy=9;p.air=true}}
+export function jump(s,i){const p=s.players[i];if(!p.air){p.vy=9;p.air=true;noticeMischief(s.fisherman,p,i,'jump')}}
 // A handful of authored beats, not a general behavior engine. Durations only
 // pace the acting; reactions never gate player movement or interactions.
 const OOK_RESPONSES = [
@@ -55,6 +55,7 @@ export function birdPose(bird,t){
 export function ook(s,i){
   const p=s.players[i];
   if(p.ook>.9)return;
+  noticeMischief(s.fisherman,p,i,'ook');
   p.ook=1.6;p.idle=0;
   emit(s,'OOK!','ook',p.x,p.z,{player:i});
   const other=1-i,friend=s.players[other];

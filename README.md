@@ -52,7 +52,15 @@ Find the fisherman beside the little pond to the right of Munks HQ, near the bot
 
 Use interact near the stool to put it back, or elsewhere to set it down for either monkey to pick up. Existing mission interactions keep priority. The hat follows the monkey through jumps, bonks, and ooks. The fisherman returns to fishing; he never chases. There is no reward or extra checklist entry. Restart resets the hat and fisherman along with the game.
 
-Phase 2 awaits the children’s playtest: is taking the hat funny on its own? Attention tiers and chasing wait for approval of this phase.
+Phase 2 has been approved for moving on.
+
+## Phase 3: increasingly suspicious
+
+Ook, jump, or take the hat where the fisherman can see you. Each monkey has their own attention: he starts oblivious, becomes suspicious with squints and muttering, then throws both hands up in exasperation. Repeat witnessed antics to get the bigger performance. Quiet time gradually calms him down.
+
+Attention affects acting only. The monkeys keep all their controls, and there are still no chases or penalties. Unseen theft can make him discover an empty stool, but he does not blame a monkey he never saw. Passing the hat never transfers attention. Restart clears both monkeys’ attention.
+
+Phase 3 awaits a family playtest before Phase 4 adds short chases and funny give-ups. More islanders are a later addition.
 
 ## Run locally
 
