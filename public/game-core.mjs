@@ -13,7 +13,7 @@ export function missions(s){return[{name:'Ring in a ridiculous morning',short:'T
 export function emit(s,text,type='info',x=0,z=0,details={}){if(type==='win'||type==='complete')s.players.forEach(p=>p.cheer=2.4);s.events.push({...details,text,type,x,z});if(s.events.length>20)s.events.shift()}
 export function nearZone(p){return [...ZONES].sort((a,b)=>dist(p,a)-dist(p,b))[0]}
 export function platformHeight(p){return p.x>-39&&p.x<-19&&p.z>-35&&p.z<-22?7:0}
-export function jump(s,i){const p=s.players[i];if(!p.air&&!isCarried(s.fisherman,i)){p.vy=9;p.air=true;noticeMischief(s.fisherman,p,i,'jump')}}
+export function jump(s,i){const p=s.players[i];if(!p.air&&!isCarried(s.fisherman,i)){p.vy=9;p.air=true;p.jumpSerial=(p.jumpSerial??0)+1}}
 // A handful of authored beats, not a general behavior engine. Durations only
 // pace the acting; reactions never gate player movement or interactions.
 const OOK_RESPONSES = [

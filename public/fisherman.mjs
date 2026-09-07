@@ -17,7 +17,7 @@ export function createFisherman(){
   return {routine:0,clock:0,reaction:null,missingNoticed:false,
     x:FISHERMAN.x,z:FISHERMAN.z,previousX:FISHERMAN.x,previousZ:FISHERMAN.z,facing:Math.PI,walk:0,
     motion:{kind:'idle',player:null,age:0},trail:[],
-    attention:[0,0],noticeCooldown:[0,0],lastNoticed:null,
+    attention:[0,0],noticeCooldown:[0,0],seenJump:[0,0],lastNoticed:null,
     hat:{place:'stool',heldBy:null,x:HAT_HOME.x,z:HAT_HOME.z}};
 }
 
@@ -27,7 +27,7 @@ export function noticeMischief(f,p,i,kind){
   // Only the monkey doing the witnessed action earns attention. Possession,
   // proximity and a missing hat never assign another monkey's actions to them.
   if(f.motion.kind!=='idle'||!fishermanSees(f,p)||f.noticeCooldown[i]>0)return false;
-  const gain={ook:12,jump:8,hat:24}[kind];
+  const gain={ook:12,jump:12,hat:24}[kind];
   if(!gain)return false;
   f.attention[i]=Math.min(100,f.attention[i]+gain);
   f.noticeCooldown[i]=.7;f.lastNoticed=i;
@@ -92,6 +92,11 @@ export function stepFisherman(f,dt,players=[],solid=[]){
     if(f.motion.kind!=='idle'){
       stepFishermanMovement(f,players,solid,FISHERMAN);continue;
     }
+    // Notice a jump anywhere in its visible flight, once per jump. Looking up
+    // halfway through an antic should count just as much as seeing takeoff.
+    players.forEach((p,i)=>{
+      if(p.air&&p.jumpSerial>f.seenJump[i]&&noticeMischief(f,p,i,'jump'))f.seenJump[i]=p.jumpSerial;
+    });
     if(f.reaction){
       f.reaction.age+=.125;
       if(f.reaction.age>=5){

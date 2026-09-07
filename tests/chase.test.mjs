@@ -52,3 +52,22 @@ test('catching an empty-handed monkey leaves the partner hat untouched',()=>{
  startChase(f,0);advance(s,3);
  assert.equal(s.players[1].heldItem,'fisherman-hat');assert.equal(f.hat.heldBy,1);
 });
+
+test('ordinary jumps do not cancel a chase or permit a catch in midair',()=>{
+ const s=ready(),f=s.fisherman;startChase(f,0);jump(s,0);
+ advance(s,.4);assert.equal(f.motion.kind,'chase');assert(s.players[0].y>.8);
+ advance(s,.2);assert.equal(f.motion.kind,'chase');
+ advance(s,.7);assert.equal(f.motion.kind,'carry','he can catch after landing');
+});
+
+test('jumping with a stolen hat is noticed during flight and leads to real pursuit',()=>{
+ const s=ready(),f=s.fisherman;Object.assign(s.players[0],{x:14,z:37});
+ interact(s,0);assert.equal(f.reaction,null,'theft was unseen');
+ let pursuitTicks=0;
+ for(let n=0;n<1200;n++){
+  if(n%40===0)jump(s,0);
+  step(s,.025,[[0,0],[0,0]]);
+  if(f.motion.kind==='chase')pursuitTicks++;
+ }
+ assert(pursuitTicks>=12,'ordinary hopping produces a visible chase, not an immediate give-up');
+});

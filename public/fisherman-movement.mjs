@@ -47,11 +47,12 @@ export function stepFishermanMovement(f,players,solid,anchor){
   const m=f.motion;m.age+=.125;
   if(m.kind==='chase'){
     const p=players[m.player];
-    if(!p||m.age>=7||p.y>.8||gap(f,anchor)>22||gap(f,p)>18||m.stuck>1){
+    const onHighGround=p&&(p.y>3||(!p.air&&p.y>.4));
+    if(!p||m.age>=7||onHighGround||gap(f,anchor)>22||gap(f,p)>18||m.stuck>1){
       f.motion={kind:'rest',player:null,age:0};return;
     }
     // A catch requires the same open ground used by movement, not proximity through scenery.
-    if(gap(f,p)<1.35&&free((f.x+p.x)/2,(f.z+p.z)/2,solid)){
+    if(!p.air&&p.y<.4&&gap(f,p)<1.35&&free((f.x+p.x)/2,(f.z+p.z)/2,solid)){
       f.facing=Math.atan2(p.x-f.x,p.z-f.z);
       returnHat(f,p,m.player);f.attention[m.player]=0;
       f.motion={kind:'carry',player:m.player,age:0,pickup:{x:p.x,z:p.z},

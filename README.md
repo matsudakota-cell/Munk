@@ -64,7 +64,9 @@ Phase 3 has been approved for moving on. More islanders are a later addition.
 
 ## Phase 4: a very short pursuit
 
-After a full exasperated performance, the fisherman leaves his rod and chair to jog after the monkey he saw. He is slower than the monkeys, stays on foot, and gives up when they get above ground level or escape. After a short pursuit he stops to catch his breath, then walks his route back to the pond, muttering.
+After a full exasperated performance, the fisherman leaves his rod and chair to jog after the monkey he saw. He is slower than the monkeys, stays on foot, and gives up when they reach elevated ground or escape. Ordinary jumps keep the pursuit going, but he can only catch a monkey after they land. After a short pursuit he stops to catch his breath, then walks his route back to the pond, muttering.
+
+Jumps can be noticed at any point in their visible flight, once per jump, so hopping while he turns toward you counts even if he missed takeoff.
 
 If he catches that monkey, he gently picks them up, carries them a few steps, and puts them down. Movement and interaction resume on release; ooks still work during the lift. Only their held hat is returned, and their attention resets to zero. Their partner stays free, keeps their own belongings, and cannot become the chase target. Completed missions and other progress remain intact. No respawn screen, score penalty, or game over.
 
