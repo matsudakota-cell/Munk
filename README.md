@@ -50,7 +50,7 @@ Phase 1 has been played by the children and approved for moving on.
 
 Find the fisherman beside the little pond to the right of Munks HQ, near the bottom of the island. His straw hat rests on a low stool. Walk up and press `E` or `Enter` to wear it. If he is looking toward shore, he makes a slow double-take. If he is watching the water, he only notices on his next glance at the stool.
 
-Use interact near the stool to put it back, or elsewhere to set it down for either monkey to pick up. Existing mission interactions keep priority. The hat follows the monkey through jumps, bonks, and ooks. The fisherman returns to fishing; he never chases. There is no reward or extra checklist entry. Restart resets the hat and fisherman along with the game.
+Use interact near the stool to put it back, or elsewhere to set it down for either monkey to pick up. Existing mission interactions keep priority. The hat follows the monkey through jumps, bonks, and ooks. There is no reward or extra checklist entry. Restart resets the hat and fisherman along with the game.
 
 Phase 2 has been approved for moving on.
 
@@ -58,9 +58,17 @@ Phase 2 has been approved for moving on.
 
 Ook, jump, or take the hat where the fisherman can see you. Each monkey has their own attention: he starts oblivious, becomes suspicious with squints and muttering, then throws both hands up in exasperation. Repeat witnessed antics to get the bigger performance. Quiet time gradually calms him down.
 
-Attention affects acting only. The monkeys keep all their controls, and there are still no chases or penalties. Unseen theft can make him discover an empty stool, but he does not blame a monkey he never saw. Passing the hat never transfers attention. Restart clears both monkeys’ attention.
+Attention drives his acting and, with Phase 4, a short chase after an exasperated performance. Unseen theft can make him discover an empty stool, but he does not blame a monkey he never saw. Passing the hat never transfers attention. Restart clears both monkeys’ attention.
 
-Phase 3 awaits a family playtest before Phase 4 adds short chases and funny give-ups. More islanders are a later addition.
+Phase 3 has been approved for moving on. More islanders are a later addition.
+
+## Phase 4: a very short pursuit
+
+After a full exasperated performance, the fisherman leaves his rod and chair to jog after the monkey he saw. He is slower than the monkeys, stays on foot, and gives up when they get above ground level or escape. After a short pursuit he stops to catch his breath, then walks his route back to the pond, muttering.
+
+If he catches that monkey, he gently picks them up, carries them a few steps, and puts them down. Movement and interaction resume on release; ooks still work during the lift. Only their held hat is returned, and their attention resets to zero. Their partner stays free, keeps their own belongings, and cannot become the chase target. Completed missions and other progress remain intact. No respawn screen, score penalty, or game over.
+
+Pause freezes the chase and carry. Restart returns everyone to the starting state. Phase 4 awaits a family playtest before the persistent tree nest in Phase 5.
 
 ## Run locally
 
@@ -95,6 +103,7 @@ The tests cover response variety and rarity, repeatable reaction selection, inpu
 - `public/monkey-personality.mjs` — Pip and Momo's expression and acting system.
 - `public/fisherman.mjs` — the single fisherman’s routine, sight checks, and hat ownership.
 - `public/fisherman-personality.mjs` — pure acting poses for idle and discovery beats.
+- `public/fisherman-movement.mjs` — bounded foot chases, gentle carries, safe release, and return routes.
 - `public/vendor/` — locally served Three.js runtime and its license.
 - `tests/` — gameplay and reaction checks using Node's built-in test runner.
 

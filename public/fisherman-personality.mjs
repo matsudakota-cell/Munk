@@ -5,7 +5,23 @@ export function fishermanPose(f){
   const turn=smooth((t-5.5)/.8)*(1-smooth((t-8.3)/.7));
   const a={facing:fishermanFacing(f),headTurn:0,headTilt:Math.sin(t)*.035,
     lean:Math.sin(t*1.5)*.025,eyeOpen:1,brow:0,mouth:.025,
-    leftArm:-.65,rightArm:-.85,shrug:0,bounce:0,rod:0};
+    leftArm:-.65,rightArm:-.85,shrug:0,bounce:0,rod:0,legSwing:0};
+  if(f.motion.kind!=='idle'){
+    const kind=f.motion.kind,beat=f.motion.age+f.clock;
+    if(kind==='rest'){
+      a.lean=.32+Math.sin(beat*6)*.06;a.headTilt=.12;
+      a.leftArm=-.45;a.rightArm=-.45;a.eyeOpen=.65;
+      a.mouth=.08+Math.max(0,Math.sin(beat*6))*.09;
+    }else{
+      a.legSwing=Math.sin(f.walk)*.5;a.bounce=Math.abs(Math.sin(f.walk))*.08;
+      a.lean=kind==='chase'?.15:.05;
+      a.leftArm=kind==='carry'?-1.55:Math.sin(f.walk)*.7;
+      a.rightArm=kind==='carry'?-1.55:-Math.sin(f.walk)*.7;
+      a.mouth=kind==='chase'?.13:.025+Math.max(0,Math.sin(beat*12))*.04;
+      a.brow=kind==='chase'?.12:0;
+    }
+    return a;
+  }
   if(!f.reaction){
     if(t>3&&t<4.5)a.rightArm=-.85-Math.sin((t-3)/1.5*Math.PI)*1.3;
     a.headTurn=turn*.5;a.eyeOpen=Math.sin(t*2.2)> .98?.12:1;

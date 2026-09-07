@@ -35,7 +35,7 @@ test('real character rigs render reaction states, freeze on pause, and recover o
     }
     const THREE={...RealThree,WebGLRenderer:TestRenderer};
   `);
-  for(const name of ['game-core.mjs','monkey-personality.mjs','fisherman.mjs','fisherman-personality.mjs']){
+  for(const name of ['game-core.mjs','monkey-personality.mjs','fisherman.mjs','fisherman-personality.mjs','fisherman-movement.mjs']){
     source=source.replace(`from './${name}'`,`from '${new URL('../public/'+name,import.meta.url).href}'`);
   }
   const game=await import('data:text/javascript;base64,'+Buffer.from(source+'\nexport {state,scene,monkeys,birds,fishermanRig,fishermanHat};').toString('base64'));
@@ -64,10 +64,22 @@ test('real character rigs render reaction states, freeze on pause, and recover o
   nodes.get('resume').onclick();key('KeyE');advance(.1);
   assert.equal(game.fishermanHat.parent,game.scene);
   assert.equal(count(),objects,'hat exchanges reuse one model');
+  Object.assign(game.state.players[0],{x:12,z:37,y:0});
+  game.state.fisherman.reaction={kind:'mischief',tier:3,player:0,age:4.875,startFacing:0};
+  advance(.6);assert.equal(game.state.fisherman.motion.kind,'carry');
+  assert.equal(game.fishermanRig.rod.parent,game.scene,'rod stays beside the chair');
+  const carryAge=game.state.fisherman.motion.age;
+  nodes.get('pause').onclick();advance(1);
+  assert.equal(game.state.fisherman.motion.age,carryAge);
+  nodes.get('resume').onclick();advance(.3);
+  assert(game.fishermanRig.g.position.z>36,'walking rig follows simulation');
   key('KeyQ');nodes.get('restart').onclick();
   assert(game.state.players.every(p=>p.reaction===null));
   assert(game.state.birds.every(b=>b.scatter===null));
   assert.equal(game.state.fisherman.hat.place,'stool');
+  assert.equal(game.state.fisherman.motion.kind,'idle');
   assert(game.state.players.every(p=>p.heldItem===null));
   advance(.1);assert(window.munks.getState().running);
+  assert.equal(game.fishermanRig.rod.parent,game.fishermanRig.body);
+  assert.equal(count(),objects,'chases and restart do not accumulate models');
 });

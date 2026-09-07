@@ -2,6 +2,7 @@ import * as THREE from './vendor/three.module.js';
 import {pose,PERSONALITIES} from './monkey-personality.mjs';
 import {FISHERMAN,HAT_HOME,hatAction} from './fisherman.mjs';
 import {fishermanPose} from './fisherman-personality.mjs';
+import {isCarried} from './fisherman-movement.mjs';
 import {createState,step,interact,jump,ook,missions,nearZone,dist,birdPose,ZONES,PADS,LADDERS,DRUMS,SONG,TRAMPOLINES,TARGETS} from './game-core.mjs';
 const $=id=>document.getElementById(id);let state=createState(),running=false,started=false,muted=true,ac,time=0,last=performance.now(),toastUntil=0,split=false,winAt=0;const keys=new Set(),touchAxes=[[0,0],[0,0]];
 const scene=new THREE.Scene();scene.background=new THREE.Color('#b7d9cd');scene.fog=new THREE.Fog('#b7d9cd',70,160);
@@ -40,8 +41,9 @@ terrainDisc(12,31,4.3,'#d6c392');terrainDisc(12,31,3.6,'#79b9b5',.06);
 path([[5,36],[12,36],[14,37]],2);
 const fishermanRig=(()=>{
  const g=group(FISHERMAN.x,0,FISHERMAN.z),body=new THREE.Group();g.add(body);
- box('#ad8059',0,.65,0,[1.65,.2,1.35],g);
- for(const x of [-.65,.65])for(const z of [-.5,.5])cyl('#8b694d',x,.32,z,.08,.65,g);
+ const chair=group(FISHERMAN.x,0,FISHERMAN.z);
+ box('#ad8059',0,.65,0,[1.65,.2,1.35],chair);
+ for(const x of [-.65,.65])for(const z of [-.5,.5])cyl('#8b694d',x,.32,z,.08,.65,chair);
  ball('#e8ad7e',0,1.65,0,[.77,.9,.52],body);
  ball('#81a5a1',0,1.45,.08,[.79,.67,.54],body);
  const head=new THREE.Group();head.position.set(0,2.9,0);body.add(head);
@@ -56,19 +58,20 @@ const fishermanRig=(()=>{
  ball('#dfab7e',0,-.09,.66,[.22,.2,.23],head);
  for(const side of [-1,1])ball('#f0e7cd',side*.19,-.27,.59,[.27,.13,.14],head);
  const mouth=ball('#695342',0,-.42,.52,[.15,.03,.055],head);
- const arms=[];
+ const arms=[],legs=[];
  for(const side of [-1,1]){
   const arm=new THREE.Group();arm.position.set(side*.7,2.1,0);body.add(arm);
   ball('#81a5a1',0,-.3,0,[.23,.44,.23],arm);ball('#e8bd91',0,-.72,0,[.22,.23,.23],arm);arms.push(arm);
-  ball('#536d72',side*.37,.69,.37,[.29,.43,.47],body);ball('#795e46',side*.37,.27,.62,[.3,.24,.46],body);
+  const leg=new THREE.Group();leg.position.set(side*.37,.85,.15);body.add(leg);legs.push(leg);
+  ball('#536d72',0,-.16,.22,[.29,.43,.47],leg);ball('#795e46',0,-.58,.47,[.3,.24,.46],leg);
  }
  const rod=new THREE.Group();rod.position.set(-.72,1.1,.55);body.add(rod);
  tube([[0,0,0],[0,1.4,1.5],[0,2,3.4]],.045,'#9c8055',rod);
  tube([[0,2,3.4],[0,.1,3.6]],.015,'#e8e3cb',rod);
  ball('#e99879',0,.12,3.6,[.12,.15,.12],rod);
- return {g,body,head,eyes,brows,mouth,arms,rod};
+ return {g,body,head,eyes,brows,mouth,arms,legs,rod};
 })();
-state.solid.push({x:FISHERMAN.x,z:FISHERMAN.z,r:.8,h:3});
+state.solid.push({x:FISHERMAN.x,z:FISHERMAN.z,r:.8,h:3,fishermanAnchor:true});
 cyl('#b58c5f',HAT_HOME.x,.4,HAT_HOME.z,.65,.8);
 const fishermanHat=group();
 cyl('#edce83',0,0,0,.82,.12,fishermanHat);
@@ -77,12 +80,21 @@ cyl('#88a6a0',0,.1,0,.5,.13,fishermanHat);
 const feather=tube([[.38,.2,0],[.64,.65,0],[.55,.95,0]],.065,'#e49a7f',fishermanHat);
 function animateFisherman(){
  const f=state.fisherman,a=fishermanPose(f),m=fishermanRig;
+ const blend=Math.min(1,f.clock/.125);
+ m.g.position.set(f.previousX+(f.x-f.previousX)*blend,0,f.previousZ+(f.z-f.previousZ)*blend);
  m.g.rotation.y=a.facing;m.body.position.y=a.bounce;m.body.rotation.x=a.lean;
  m.head.rotation.set(0,a.headTurn,a.headTilt);
  m.eyes.forEach(e=>e.scale.y=a.eyeOpen*.17);
  m.brows.forEach(b=>b.position.y=.34+a.brow);m.mouth.scale.y=a.mouth;
  m.arms.forEach((arm,i)=>arm.rotation.set(i?a.rightArm:a.leftArm,0,(i?1:-1)*a.shrug));
- m.rod.rotation.x=a.rod;
+ m.legs.forEach((leg,i)=>leg.rotation.x=(i?1:-1)*a.legSwing);
+ if(f.motion.kind==='idle'){
+  if(m.rod.parent!==m.body)m.body.add(m.rod);
+  m.rod.position.set(-.72,1.1,.55);m.rod.rotation.set(a.rod,0,0);
+ }else{
+  if(m.rod.parent!==scene)scene.add(m.rod);
+  m.rod.position.set(FISHERMAN.x+.72,.3,FISHERMAN.z-.55);m.rod.rotation.set(.65,Math.PI,0);
+ }
  const hat=f.hat,holder=hat.heldBy;
  if(holder!==null){
   // Parent to the animated head: it stays attached through jumps and bonks.
@@ -167,7 +179,8 @@ function render(dt){const a=state.players[0],b=state.players[1],gap=dist(a,b);if
 function animate(t){const dt=Math.min(.04,(t-last)/1000);last=t;if(running){time+=dt;const axes=[[Number(keys.has('KeyD'))-Number(keys.has('KeyA')),Number(keys.has('KeyS'))-Number(keys.has('KeyW'))],[Number(keys.has('ArrowRight'))-Number(keys.has('ArrowLeft')),Number(keys.has('ArrowDown'))-Number(keys.has('ArrowUp'))]];step(state,dt,axes);for(const e of state.events.splice(0)){if(handleOokEvent(e))continue;if(e.type==='bonk'){sound(135,.14)}else if(e.type==='land'){sound(95,.055)}else if(e.type==='note'){sound([262,330,392,440][Math.max(0,DRUMS.findIndex(d=>d.note===e.text))],.25);const j=DRUMS.findIndex(d=>d.note===e.text);if(j>=0)drums[j].scale.y=2}else if(e.type==='bounce'){sound(210,.16)}else if(e.type==='bell'){sound(880,.5);toast(e.text)}else{toast(e.text);if(e.type==='win'||e.type==='pin'){sound(e.type==='win'?660:170,.2);celebrate(e.x,e.z)}if(e.type==='complete'){winAt=time+2.6;}}}if(time>toastUntil)$('toast').hidden=true;if(winAt&&time>=winAt){winAt=0;$('winOverlay').hidden=false;running=false;keys.clear()}}
 state.players.forEach((p,i)=>{
  const m=monkeys[i],acting=pose(p,i,time),moving=p.moving;
- m.g.position.set(p.x,p.y,p.z);const facing=p.idle>2.5?0:p.angle;const delta=THREE.MathUtils.euclideanModulo(facing-m.g.rotation.y+Math.PI,Math.PI*2)-Math.PI;m.g.rotation.y+=delta*Math.min(1,dt*12);
+ const carried=isCarried(state.fisherman,i),f=state.fisherman,blend=Math.min(1,f.clock/.125);
+ m.g.position.set(carried?f.previousX+(f.x-f.previousX)*blend+Math.sin(f.facing)*.85:p.x,p.y,carried?f.previousZ+(f.z-f.previousZ)*blend+Math.cos(f.facing)*.85:p.z);const facing=carried?f.facing:p.idle>2.5?0:p.angle;const delta=THREE.MathUtils.euclideanModulo(facing-m.g.rotation.y+Math.PI,Math.PI*2)-Math.PI;m.g.rotation.y+=delta*Math.min(1,dt*12);
  m.body.scale.set(acting.scaleX,acting.scaleY,acting.scaleX);
  m.body.rotation.set((moving&&!p.air?.10:0)+acting.bodyLean,acting.spin,acting.tilt);
  m.body.position.y=acting.hop+(moving?Math.abs(Math.sin(p.walk))*.075:Math.sin(time*2+i)*.025);

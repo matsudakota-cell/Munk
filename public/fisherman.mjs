@@ -1,8 +1,10 @@
+import {startChase,stepFishermanMovement} from './fisherman-movement.mjs';
 export const FISHERMAN={x:12,z:36};
 export const HAT_HOME={x:14,z:37};
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
 export function fishermanFacing(f){
+  if(f.motion.kind!=='idle')return f.facing;
   if(f.reaction){
     const age=f.reaction.age+f.clock;
     return (f.reaction.startFacing??0)*(1-smooth(age/.65))+Math.PI*smooth(age-4);
@@ -13,6 +15,8 @@ export function fishermanFacing(f){
 
 export function createFisherman(){
   return {routine:0,clock:0,reaction:null,missingNoticed:false,
+    x:FISHERMAN.x,z:FISHERMAN.z,previousX:FISHERMAN.x,previousZ:FISHERMAN.z,facing:Math.PI,walk:0,
+    motion:{kind:'idle',player:null,age:0},trail:[],
     attention:[0,0],noticeCooldown:[0,0],lastNoticed:null,
     hat:{place:'stool',heldBy:null,x:HAT_HOME.x,z:HAT_HOME.z}};
 }
@@ -22,7 +26,7 @@ export const attentionTier=value=>value>=55?3:value>=22?2:1;
 export function noticeMischief(f,p,i,kind){
   // Only the monkey doing the witnessed action earns attention. Possession,
   // proximity and a missing hat never assign another monkey's actions to them.
-  if(!fishermanSees(f,p)||f.noticeCooldown[i]>0)return false;
+  if(f.motion.kind!=='idle'||!fishermanSees(f,p)||f.noticeCooldown[i]>0)return false;
   const gain={ook:12,jump:8,hat:24}[kind];
   if(!gain)return false;
   f.attention[i]=Math.min(100,f.attention[i]+gain);
@@ -40,7 +44,7 @@ export function noticeMischief(f,p,i,kind){
 export function fishermanSees(f,p){
   // The fishing beat faces the pond; the shoreward glance is easy to read.
   const facing=fishermanFacing(f);
-  const dx=p.x-FISHERMAN.x,dz=p.z-FISHERMAN.z,d=distance(p,FISHERMAN);
+  const dx=p.x-f.x,dz=p.z-f.z,d=distance(p,f);
   return p.y<2.5&&d<7&&(dx*Math.sin(facing)+dz*Math.cos(facing))>d*.25;
 }
 
@@ -56,7 +60,7 @@ export function interactHat(f,p,i){
   if(action==='take'){
     const seen=fishermanSees(f,p);
     f.hat.place='held';f.hat.heldBy=i;p.heldItem='fisherman-hat';
-    if(seen){
+    if(seen&&f.motion.kind==='idle'){
       const wasReacting=!!f.reaction;
       noticeMischief(f,p,i,'hat');
       if(!wasReacting){
@@ -75,18 +79,25 @@ export function interactHat(f,p,i){
   return true;
 }
 
-export function stepFisherman(f,dt){
+export function stepFisherman(f,dt,players=[],solid=[]){
   // Decisions run at 8 Hz. Rendering interpolates the authored acting beats.
   f.clock+=dt;
   while(f.clock>=.125){
     f.clock-=.125;
+    f.previousX=f.x;f.previousZ=f.z;
     for(let i=0;i<2;i++){
       f.noticeCooldown[i]=Math.max(0,f.noticeCooldown[i]-.125);
       f.attention[i]=Math.max(0,f.attention[i]-.125*.9);
     }
+    if(f.motion.kind!=='idle'){
+      stepFishermanMovement(f,players,solid,FISHERMAN);continue;
+    }
     if(f.reaction){
       f.reaction.age+=.125;
-      if(f.reaction.age>=5){f.reaction=null;f.routine=0;}
+      if(f.reaction.age>=5){
+        const r=f.reaction;f.facing=fishermanFacing(f);f.reaction=null;f.routine=0;
+        if(r.tier===3&&players[r.player])startChase(f,r.player);
+      }
       continue;
     }
     f.routine=(f.routine+.125)%9;
