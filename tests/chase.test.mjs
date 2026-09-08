@@ -6,6 +6,38 @@ import {FISHERMAN} from '../public/fisherman.mjs';
 const advance=(s,n,axes=[[0,0],[0,0]])=>{for(let t=0;t<n;t+=.025)step(s,.025,axes)};
 function ready(){const s=createState();Object.assign(s.players[0],{x:12,z:37,y:0});return s;}
 
+test('repeat theft interrupts rest or returning instead of being forgotten',()=>{
+ for(const kind of ['rest','return']){
+  const s=ready(),f=s.fisherman;Object.assign(s.players[0],{x:14,z:37});
+  f.motion={kind,player:null,age:0};f.facing=0;
+  f.trail=[{x:12,z:36},{x:12,z:37}];
+  interact(s,0);assert.equal(f.reaction?.player,0);assert.equal(f.reaction?.tier,3);
+  advance(s,1.25);assert.equal(f.motion.kind,'chase');
+  assert.equal(f.trail[0].z,36,'return route is retained');
+  advance(s,20);assert.equal(f.motion.kind,'idle');assert.equal(f.hat.place,'stool');
+ }
+});
+
+test('five complete hat theft and catch cycles remain repeatable',()=>{
+ const s=ready(),f=s.fisherman;
+ for(let cycle=0;cycle<5;cycle++){
+  Object.assign(s.players[0],{x:14,z:37,y:0,air:false});f.routine=7;
+  interact(s,0);advance(s,1.25);assert.equal(f.motion.kind,'chase');
+  advance(s,20);assert.equal(f.motion.kind,'idle');assert.equal(f.hat.place,'stool');
+  assert.equal(f.trail.length,0);assert.equal(f.pendingTheft,null);
+ }
+});
+
+test('a theft seen during a carry waits for release and never swaps the passenger',()=>{
+ const s=ready(),f=s.fisherman;startChase(f,0);advance(s,.15);
+ assert(isCarried(f,0));f.facing=0;
+ Object.assign(s.players[1],{x:14,z:37});interact(s,1);
+ assert.equal(f.pendingTheft,1);assert(isCarried(f,0));assert(!isCarried(f,1));
+ advance(s,2.4);assert(!isCarried(f,0));assert.equal(f.reaction?.player,1);
+ assert.equal(s.players[0].y,0);
+ advance(s,1.25);assert.equal(f.motion.player,1);
+});
+
 test('one witnessed theft interrupts mimicry and starts a faster chase without extra antics',()=>{
  const s=ready(),f=s.fisherman;Object.assign(s.players[0],{x:14,z:37});
  f.routine=7;f.social={kind:'wave',age:.5,player:1};f.noticeCooldown[0]=.6;

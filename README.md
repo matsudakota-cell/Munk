@@ -68,6 +68,8 @@ After an exasperated performance (shortened to 1.25 seconds for witnessed theft)
 
 Jumps can be noticed at any point in their visible flight, once per jump, so hopping while he turns toward you counts even if he missed takeoff.
 
+A witnessed repeat theft interrupts catching his breath or walking home. If he is already chasing or carrying a monkey, he remembers a new witnessed theft and responds after safely finishing that event, provided the new thief still holds the hat. He never switches passengers mid-carry. Interrupted pursuits retain their route back to the chair, and the hat can be stolen again after every catch.
+
 If he catches that monkey, he gently picks them up, carries them a few steps, and puts them down. Movement and interaction resume on release; ooks still work during the lift. Only their held object returns to its original spot, and their attention resets to zero. Their partner stays free, keeps their own belongings, and cannot become the chase target. Completed missions and deposited nest treasures remain intact. No respawn screen, score penalty, or game over.
 
 Pause freezes the chase and carry. Restart returns everyone to the starting state while keeping the nest collection. The chase fix has been played and Phase 4 approved for moving on.

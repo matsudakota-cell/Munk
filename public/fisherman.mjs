@@ -16,7 +16,7 @@ export function fishermanFacing(f){
 }
 
 export function createFisherman(){
-  return {routine:0,clock:0,reaction:null,missingNoticed:false,gestureCycle:0,social:null,
+  return {routine:0,clock:0,reaction:null,missingNoticed:false,gestureCycle:0,social:null,pendingTheft:null,
     x:FISHERMAN.x,z:FISHERMAN.z,previousX:FISHERMAN.x,previousZ:FISHERMAN.z,facing:Math.PI,walk:0,
     motion:{kind:'idle',player:null,age:0},trail:[],
     attention:[0,0],noticeCooldown:[0,0],seenJump:[0,0],lastNoticed:null,
@@ -57,28 +57,33 @@ export function hatAction(f,p,i){
   return null;
 }
 
+function reactToTheft(f,i){
+  const startFacing=fishermanFacing(f);
+  f.motion={kind:'idle',player:null,age:0};
+  f.attention[i]=Math.min(100,f.attention[i]+60);f.noticeCooldown[i]=.7;f.lastNoticed=i;
+  f.social=null;f.pendingTheft=null;
+  f.reaction={kind:'double_take',age:0,duration:1.25,startFacing,player:i,tier:3};
+  f.missingNoticed=true;
+}
+
 export function interactHat(f,p,i){
   const action=hatAction(f,p,i);
   if(!action)return false;
   if(action==='take'){
     const seen=fishermanSees(f,p);
     f.hat.place='held';f.hat.heldBy=i;p.heldItem='fisherman-hat';
-    if(seen&&f.motion.kind==='idle'){
-      const startFacing=fishermanFacing(f);
-      // A real theft interrupts a friendly gesture and earns an immediate response,
-      // even if an ook just used this monkey's ordinary attention cooldown.
-      f.noticeCooldown[i]=0;
-      noticeMischief(f,p,i,'hat');
-      f.social=null;
-      f.reaction={kind:'double_take',age:0,duration:1.25,startFacing,player:i,tier:3};
-      f.missingNoticed=true;
+    if(seen){
+      // Recovery is interruptible. A pursuit or carry must finish safely first;
+      // remember the witnessed action without swapping its current target.
+      if(f.motion.kind==='chase'||f.motion.kind==='carry')f.pendingTheft=i;
+      else reactToTheft(f,i);
     }
   }else{
     p.heldItem=null;f.hat.heldBy=null;
     f.hat.place=action==='return'?'stool':'ground';
     f.hat.x=action==='return'?HAT_HOME.x:p.x;
     f.hat.z=action==='return'?HAT_HOME.z:p.z;
-    if(action==='return')f.missingNoticed=false;
+    if(action==='return'){f.missingNoticed=false;f.pendingTheft=null;}
   }
   return true;
 }
@@ -92,6 +97,11 @@ export function stepFisherman(f,dt,players=[],solid=[]){
     for(let i=0;i<2;i++){
       f.noticeCooldown[i]=Math.max(0,f.noticeCooldown[i]-.125);
       f.attention[i]=Math.max(0,f.attention[i]-.125*.9);
+    }
+    if(f.pendingTheft!==null&&f.motion.kind!=='chase'&&f.motion.kind!=='carry'){
+      const thief=f.pendingTheft;
+      f.pendingTheft=null;
+      if(f.hat.place==='held'&&f.hat.heldBy===thief)reactToTheft(f,thief);
     }
     if(f.motion.kind!=='idle'){
       f.social=null;

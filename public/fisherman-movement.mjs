@@ -22,7 +22,9 @@ function move(f,target,speed,solid,remember=true){
 
 export function startChase(f,player){
   f.motion={kind:'chase',player,age:0,stuck:0};
-  f.trail=[{x:f.x,z:f.z}];
+  // An interrupted return still needs its known clear route back to the chair.
+  // Append the new excursion instead of discarding that route.
+  f.trail.push({x:f.x,z:f.z});
 }
 
 function returnHat(f,p,i){
