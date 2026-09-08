@@ -84,7 +84,17 @@ The collection saves in this browser and profile using localStorage. Refreshing 
 
 Only deposited object IDs are persisted, under `munks.nest.v1`; transient missions, positions, held items, and attention start fresh. Invalid saves are handled safely. There is no collection reset button, so restarting cannot accidentally erase the nest.
 
-Phase 5 awaits the family playtest: do the kids want to show someone their nest? More dramatic reactions remain a later polish pass; Phase 6 is mimicry.
+The owner authorized continuing into Phase 6 ahead of the weekend family playtest. The nest still awaits the children’s verdict: do they want to show someone their collection? More dramatic mischief reactions remain a later polish pass.
+
+## Phase 6: monkey see, monkey do
+
+The fisherman occasionally waves, stretches, or salutes when he turns toward shore. Stand nearby and press the existing ook button (`Q` for Pip, `/` for Momo) while the **Copy** hint appears. The monkey copies him, and he answers the gesture after a short beat. This friendly exchange adds no attention, goal, or reward.
+
+The monkeys can copy each other’s stretches, salutes, waves, and imitations too. Pip adds a wobble, a bigger wave, or an overambitious stretch; Momo is gentler. Every copy needs a player’s button press, so the exchange never starts an endless automatic loop. Existing reactions finish before another imitation starts.
+
+Outside a matching gesture, the ook button keeps its normal behavior. Movement, jumping, collecting, and mission interactions still work during imitations. Pause freezes the exchange; restart clears the transient gestures while keeping the nest collection. No new buttons or dependencies were added.
+
+Mimicry and the nest are ready for the weekend playtest. More NPCs and Easter eggs remain future additions; Phase 7 in the original brief adds anchor and relay mission shapes.
 
 ## Run locally
 
@@ -122,6 +132,7 @@ The tests cover response variety and rarity, repeatable reaction selection, inpu
 - `public/fisherman-movement.mjs` — bounded foot chases, gentle carries, safe release, and return routes.
 - `public/nest.mjs` — nest entry, collectible ownership, permanent deposits, and pictorial wants.
 - `public/nest-storage.mjs` — validated collection saves and graceful storage failure handling.
+- `public/mimicry.mjs` — gesture matching, deliberate imitations, and character-specific gesture poses.
 - `public/vendor/` — locally served Three.js runtime and its license.
 - `tests/` — gameplay and reaction checks using Node's built-in test runner.
 

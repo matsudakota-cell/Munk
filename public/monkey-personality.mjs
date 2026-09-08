@@ -1,3 +1,4 @@
+import {monkeyGesture,applyMonkeyGesture} from './mimicry.mjs';
 // Shared character acting rules: pure poses keep expressions consistent at any frame rate.
 export const PERSONALITIES=[{name:'Pip',trait:'The little show-off',fur:'#a27646',skin:'#f0c896',scarf:'#f1c453'},{name:'Momo',trait:'The cuddly daydreamer',fur:'#826751',skin:'#efd7b1',scarf:'#8ecddf'}];
 export function pose(p,i,t){
@@ -19,6 +20,15 @@ export function pose(p,i,t){
  reactionKind:null,reactionAge:0,armPose:null,bodyLean:0,headNod:0,earWiggle:0,tailSwing:0,replying:false,
  };
  const r=p.reaction;
+ if(!bonk&&!celebrate&&!air){
+   const gesture=p.mimic?.kind??(!r?monkeyGesture(p,i):null);
+   if(gesture){
+     const age=p.mimic?p.mimic.duration-p.mimic.remaining:t;
+     const blend=p.mimic?Math.min(1,age/.2,p.mimic.remaining/.3):1;
+     acting.reactionKind=p.mimic?'mimic_'+gesture:null;
+     return applyMonkeyGesture(acting,gesture,i,age,blend);
+   }
+ }
  // Physical reactions stay readable. A social beat never changes the simulation.
  if(!r||bonk||celebrate||air)return acting;
  const age=r.duration-r.remaining;

@@ -1,5 +1,6 @@
 import {createFisherman,interactHat,stepFisherman,noticeMischief} from './fisherman.mjs';
 import {isCarried} from './fisherman-movement.mjs';
+import {tryMimic,stepMimicry} from './mimicry.mjs';
 import {restoreNest,nestFloor,climbNest,depositAtNest,interactFind,returnCarriedFind} from './nest.mjs';
 export const ZONES=[{id:'bells',name:'Canopy Club',x:-29,z:-28,color:'#ebc95b'},{id:'band',name:'Jungle Jam',x:28,z:-28,color:'#eb987c'},{id:'bubbles',name:'Bubble Works',x:-29,z:25,color:'#8edce3'},{id:'bowling',name:'Coconut Lanes',x:29,z:25,color:'#bfcc72'},{id:'bounce',name:'Cloud Hoppers',x:0,z:0,color:'#d2b3e9'}];
 export const PADS=[{x:-34,z:25},{x:-24,z:25}];
@@ -57,11 +58,12 @@ export function birdPose(bird,t){
 export function ook(s,i){
   const p=s.players[i];
   if(p.ook>.9)return;
-  noticeMischief(s.fisherman,p,i,'ook');
+  const copied=tryMimic(s,i);
+  if(!copied&&!p.mimic)noticeMischief(s.fisherman,p,i,'ook');
   p.ook=1.6;p.idle=0;
   emit(s,'OOK!','ook',p.x,p.z,{player:i});
   const other=1-i,friend=s.players[other];
-  if(dist(p,friend)<7&&Math.abs(p.y-friend.y)<2&&!friend.reaction){
+  if(!copied&&!friend.mimic&&dist(p,friend)<7&&Math.abs(p.y-friend.y)<2&&!friend.reaction){
     const kind=chooseResponse(s,other),duration=RESPONSE_LENGTHS[kind];
     friend.reaction={kind,duration,remaining:duration,sourcePlayer:i,voiced:false};
     friend.lastReaction=kind;
@@ -109,7 +111,7 @@ if(depositAtNest(s,i))return;
 if(interactHat(s.fisherman,p,i))return;
 if(interactFind(s,i))return;
 const zone=nearZone(p);emit(s,missions(s).find(m=>m.zone.id===zone.id).detail)}
-export function step(s,dt,axes){dt=Math.max(0,Math.min(.04,dt));s.time+=dt;stepOokReactions(s,dt);stepFisherman(s.fisherman,dt,s.players,s.solid);
+export function step(s,dt,axes){dt=Math.max(0,Math.min(.04,dt));s.time+=dt;stepOokReactions(s,dt);stepMimicry(s,dt);stepFisherman(s.fisherman,dt,s.players,s.solid);
 s.players.forEach((p,i)=>{if(isCarried(s.fisherman,i)){returnCarriedFind(s,i);p.ook=Math.max(0,p.ook-dt);return;}for(const key of ['bump','bumpCooldown','land','cheer','hello'])p[key]=Math.max(0,p[key]-dt);let [dx,dz]=axes[i]||[0,0],len=Math.hypot(dx,dz);p.moving=len>0;p.idle=len>0||p.air?0:p.idle+dt;if(len>0){dx/=Math.max(1,len);dz/=Math.max(1,len);const speed=8.3,x=p.x+dx*speed*dt,z=p.z+dz*speed*dt;const blocked=(x,z)=>s.solid.some(o=>p.y<o.h&&Math.hypot(x-o.x,z-o.z)<o.r+.48);if((blocked(x,p.z)||blocked(p.x,z))&&p.bumpCooldown<=0){p.bump=1;p.bumpCooldown=1.2;emit(s,i?'Oops!':'BONK!','bonk',p.x,p.z)}if(!blocked(x,p.z))p.x=Math.max(-46,Math.min(46,x));if(!blocked(p.x,z))p.z=Math.max(-43,Math.min(43,z));p.angle=Math.atan2(dx,dz);p.walk+=dt*13}
 const ground=nestFloor(p)|| (p.y>5.8&&platformHeight(p)>0?7:(p.x>19&&p.x<37&&p.z>-33&&p.z<-23?.65:0));if(p.y<ground){p.y=ground;p.vy=0;p.air=false;}if(p.y>ground+.01||p.vy!==0){p.vy-=22*dt;p.y+=p.vy*dt;p.air=true;if(p.y<=ground){if(p.vy < -3){p.land=.36;emit(s,'puff','land',p.x,p.z)}p.y=ground;p.vy=0;p.air=false}}else p.air=false;
 TRAMPOLINES.forEach((t,j)=>{if(dist(p,t)<1.75&&p.y<.65&&p.vy<=0){p.vy=16;p.air=true;emit(s,'Boing!','bounce',p.x,p.z)}if(dist(p,t)<2&&p.y>4.1&&!s.hoops[j]){s.hoops[j]=true;s.bouncers.push(i);emit(s,'Sky hoop! That is definitely not how walking works.','win',p.x,p.z)}else if(dist(p,t)<2&&p.y>4.1&&!s.bouncers.includes(i)){s.bouncers.push(i)}});

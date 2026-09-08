@@ -15,6 +15,8 @@ function nearby(){
 function sampleResponses(seed,count=240){
   const state=nearby(),trace=[[],[]];state.reactionSeed=seed;
   for(let n=0;n<count;n++){
+    // Sample ordinary calls outside the new, intentionally different idle-copy context.
+    state.players.forEach(p=>p.idle=0);
     ook(state,n%2);
     const r=state.players[1-n%2].reaction;
     assert(r);trace[1-n%2].push(r.kind);

@@ -5,6 +5,7 @@ const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
 export function fishermanFacing(f){
   if(f.motion.kind!=='idle')return f.facing;
+  if(f.social&&!f.reaction)return 0;
   if(f.reaction){
     const age=f.reaction.age+f.clock;
     return (f.reaction.startFacing??0)*(1-smooth(age/.65))+Math.PI*smooth(age-4);
@@ -14,7 +15,7 @@ export function fishermanFacing(f){
 }
 
 export function createFisherman(){
-  return {routine:0,clock:0,reaction:null,missingNoticed:false,
+  return {routine:0,clock:0,reaction:null,missingNoticed:false,gestureCycle:0,social:null,
     x:FISHERMAN.x,z:FISHERMAN.z,previousX:FISHERMAN.x,previousZ:FISHERMAN.z,facing:Math.PI,walk:0,
     motion:{kind:'idle',player:null,age:0},trail:[],
     attention:[0,0],noticeCooldown:[0,0],seenJump:[0,0],lastNoticed:null,
@@ -91,6 +92,7 @@ export function stepFisherman(f,dt,players=[],solid=[]){
       f.attention[i]=Math.max(0,f.attention[i]-.125*.9);
     }
     if(f.motion.kind!=='idle'){
+      f.social=null;
       stepFishermanMovement(f,players,solid,FISHERMAN);continue;
     }
     // Notice a jump anywhere in its visible flight, once per jump. Looking up
@@ -99,6 +101,7 @@ export function stepFisherman(f,dt,players=[],solid=[]){
       if(p.air&&p.jumpSerial>f.seenJump[i]&&noticeMischief(f,p,i,'jump'))f.seenJump[i]=p.jumpSerial;
     });
     if(f.reaction){
+      f.social=null;
       f.reaction.age+=.125;
       if(f.reaction.age>=5){
         const r=f.reaction;f.facing=fishermanFacing(f);f.reaction=null;f.routine=0;
@@ -106,6 +109,12 @@ export function stepFisherman(f,dt,players=[],solid=[]){
       }
       continue;
     }
+    if(f.social){
+      f.social.age+=.125;
+      if(f.social.age>=3.5){f.social=null;f.routine=8.7;}
+      continue;
+    }
+    if(f.routine+.125>=9)f.gestureCycle++;
     f.routine=(f.routine+.125)%9;
     if(f.routine>=6.25&&f.hat.place!=='stool'&&!f.missingNoticed){
       f.reaction={kind:'discover_missing',age:0,startFacing:fishermanFacing(f)};f.missingNoticed=true;

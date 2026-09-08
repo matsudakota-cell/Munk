@@ -1,4 +1,5 @@
 import {fishermanFacing,attentionTier} from './fisherman.mjs';
+import {fishermanGesture} from './mimicry.mjs';
 const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
 export function fishermanPose(f){
   const t=f.routine+f.clock;
@@ -23,6 +24,16 @@ export function fishermanPose(f){
     return a;
   }
   if(!f.reaction){
+    const gesture=f.social?.kind??fishermanGesture(f);
+    if(gesture){
+      const beat=f.social?Math.max(0,f.social.age+f.clock-.6):t-6.4;
+      const blend=f.social?smooth(beat/.3)*(1-smooth((beat-2.4)/.5)):smooth(beat/.25);
+      a.headTilt=Math.sin(beat*5)*.08*blend;a.mouth=.025+(f.social?.06:0)*blend;
+      if(gesture==='wave'){a.rightArm=-2.5*blend;a.shrug=(.3+Math.sin(beat*8)*.18)*blend;}
+      if(gesture==='salute'){a.rightArm=-2.35*blend;a.headTilt=-.12*blend;}
+      if(gesture==='stretch'){a.leftArm=-2.7*blend;a.rightArm=-2.7*blend;a.lean=-.12*blend;a.eyeOpen=.7;}
+      return a;
+    }
     if(t>3&&t<4.5)a.rightArm=-.85-Math.sin((t-3)/1.5*Math.PI)*1.3;
     a.headTurn=turn*.5;a.eyeOpen=Math.sin(t*2.2)> .98?.12:1;
     const tier=f.lastNoticed===null?1:attentionTier(f.attention[f.lastNoticed]);

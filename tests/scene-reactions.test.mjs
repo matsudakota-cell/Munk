@@ -36,7 +36,7 @@ test('real character rigs render reaction states, freeze on pause, and recover o
     }
     const THREE={...RealThree,WebGLRenderer:TestRenderer};
   `);
-  for(const name of ['game-core.mjs','monkey-personality.mjs','fisherman.mjs','fisherman-personality.mjs','fisherman-movement.mjs','nest.mjs','nest-storage.mjs']){
+  for(const name of ['game-core.mjs','monkey-personality.mjs','fisherman.mjs','fisherman-personality.mjs','fisherman-movement.mjs','nest.mjs','nest-storage.mjs','mimicry.mjs']){
     source=source.replace(`from './${name}'`,`from '${new URL('../public/'+name,import.meta.url).href}'`);
   }
   const game=await import('data:text/javascript;base64,'+Buffer.from(source+'\nexport {state,scene,monkeys,birds,fishermanRig,fishermanHat,findMeshes,wantFrames};').toString('base64'));
@@ -83,6 +83,18 @@ test('real character rigs render reaction states, freeze on pause, and recover o
   advance(.1);assert(window.munks.getState().running);
   assert.equal(game.fishermanRig.rod.parent,game.fishermanRig.body);
   assert.equal(count(),objects,'chases and restart do not accumulate models');
+  Object.assign(game.state.players[0],{x:14,z:38,y:0,idle:0});game.state.fisherman.routine=6.5;
+  key('KeyQ');advance(1);
+  assert.equal(game.state.players[0].mimic.kind,'wave');
+  assert(Math.abs(game.monkeys[0].arms[1].rotation.z)>2);
+  assert(game.fishermanRig.arms[1].rotation.x<-1);
+  const mimicRemaining=game.state.players[0].mimic.remaining,socialAge=game.state.fisherman.social.age;
+  nodes.get('pause').onclick();advance(1);
+  assert.equal(game.state.players[0].mimic.remaining,mimicRemaining);
+  assert.equal(game.state.fisherman.social.age,socialAge);
+  nodes.get('restart').onclick();advance(.1);
+  assert(!game.state.players[0].mimic);assert.equal(game.state.fisherman.social,null);
+  assert.equal(count(),objects,'mimicry reuses articulated models');
   Object.assign(game.state.players[0],{x:-9,z:21,y:0});key('KeyE');advance(.1);
   assert.equal(game.findMeshes[0].parent,game.monkeys[0].arms[1]);
   Object.assign(game.state.players[0],{x:-12,z:38,y:0});key('KeyE');advance(.1);
