@@ -3,8 +3,12 @@ import {pose,PERSONALITIES} from './monkey-personality.mjs';
 import {FISHERMAN,HAT_HOME,hatAction} from './fisherman.mjs';
 import {fishermanPose} from './fisherman-personality.mjs';
 import {isCarried} from './fisherman-movement.mjs';
+import {NEST,FINDS,nestSave,nestDisplay,nestWants,nestLadderAction,insideNest,findAction} from './nest.mjs';
+import {loadNest,saveNest} from './nest-storage.mjs';
 import {createState,step,interact,jump,ook,missions,nearZone,dist,birdPose,ZONES,PADS,LADDERS,DRUMS,SONG,TRAMPOLINES,TARGETS} from './game-core.mjs';
-const $=id=>document.getElementById(id);let state=createState(),running=false,started=false,muted=true,ac,time=0,last=performance.now(),toastUntil=0,split=false,winAt=0;const keys=new Set(),touchAxes=[[0,0],[0,0]];
+let nestStorage;try{nestStorage=window.localStorage;}catch{}
+const $=id=>document.getElementById(id);let state=createState(loadNest(nestStorage)),running=false,started=false,muted=true,ac,time=0,last=performance.now(),toastUntil=0,split=false,winAt=0;const keys=new Set(),touchAxes=[[0,0],[0,0]];
+let savedNestRevision=0,nestSaveWarning=false;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#b7d9cd');scene.fog=new THREE.Fog('#b7d9cd',70,160);
 let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});}catch(e){$('start').textContent='3D graphics are unavailable';$('startOverlay').querySelector('p').textContent='Try opening Munks in a browser with hardware acceleration enabled.';throw e}
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.setClearColor('#b7d9cd');$('world').appendChild(renderer.domElement);
@@ -18,7 +22,7 @@ const water=box('#7bbfba',0,-1.1,0,[250,.7,250]);water.castShadow=false;const la
 function path(points,width=4){for(let i=1;i<points.length;i++){const [ax,az]=points[i-1],[bx,bz]=points[i],d=Math.hypot(bx-ax,bz-az),m=box('#ddcf9f',(ax+bx)/2,.05,(az+bz)/2,[width,.08,d]);m.rotation.y=Math.atan2(bx-ax,bz-az);terrainDisc(ax,az,width/2,'#ddcf9f',.095);terrainDisc(bx,bz,width/2,'#ddcf9f',.095)}}path([[0,36],[0,13],[0,0],[0,-18],[0,-37]],4.7);path([[-40,-28],[-29,-28],[-16,-10],[0,0],[17,-10],[28,-28],[40,-28]],4);path([[-41,25],[-29,25],[-16,17],[0,9],[17,17],[29,25],[41,25]],4.4);
 let seed=12;function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
 function tree(x,z,h=7,kind=0){const g=group(x,0,z);cyl('#886848',0,h*.38,0,.43,h*.76,g,.29);const top=kind?'#5c8a53':'#6b9a53';ball(top,0,h*.79,0,[2.45,2.2,2.1],g);ball(kind?'#729d5d':'#81a861',-1.35,h*.71,.5,[1.7,1.6,1.6],g);ball('#8fb56c',.8,h*.95,-.2,[1.45,1.35,1.4],g);state.solid.push({x,z,r:.52,h:3});return g}
-for(let i=0;i<55;i++){let x=-46+rand()*92,z=-43+rand()*86;const clear=ZONES.some(a=>Math.hypot(x-a.x,z-a.z)<14)||Math.abs(x)<6||Math.hypot(x-12,z-35)<8;if(!clear)tree(x,z,5+rand()*4,i%2)}for(let i=0;i<23;i++){let x=-47+i*4.2;tree(x,-44,5+rand()*3,i%2);if(i%2===0)tree(x,44,5+rand()*2,1)}
+for(let i=0;i<55;i++){let x=-46+rand()*92,z=-43+rand()*86;const clear=ZONES.some(a=>Math.hypot(x-a.x,z-a.z)<14)||Math.abs(x)<6||Math.hypot(x-12,z-35)<8||Math.hypot(x-NEST.x,z-NEST.z)<8||FINDS.some(o=>Math.hypot(x-o.x,z-o.z)<3);if(!clear)tree(x,z,5+rand()*4,i%2)}for(let i=0;i<23;i++){let x=-47+i*4.2;tree(x,-44,5+rand()*3,i%2);if(i%2===0)tree(x,44,5+rand()*2,1)}
 for(let i=0;i<90;i++){let x=-46+rand()*92,z=-43+rand()*86;if(ZONES.some(a=>Math.hypot(x-a.x,z-a.z)<12)||Math.abs(x)<5)continue;const g=group(x,.1,z);for(let j=0;j<3;j++){let leaf=mesh(new THREE.ConeGeometry(.15,.7,3),'#6f9c52',j*.19,.2,0,[1,1,1],g);leaf.rotation.z=(j-1)*.35}if(i%4===0){cyl('#799855',0,.4,0,.045,.8,g);ball(i%3?'#f4da78':'#e4a29a',0,.83,0,[.25,.16,.25],g)}}
 // Home base, little rope fences, and useful signposts.
 const hut=group(0,0,34);box('#b88859',0,2,0,[7,4,5],hut);const roof=mesh(new THREE.ConeGeometry(5.8,3.1,4),'#71926a',0,5.3,0,[1,1,1],hut);roof.rotation.y=Math.PI/4;box('#59725a',0,1.5,2.53,[1.6,3,.1],hut);box('#f3d982',-2.1,2.4,2.54,[1.1,1.1,.1],hut);box('#f3d982',2.1,2.4,2.54,[1.1,1.1,.1],hut);textSprite('MUNKS HQ',0,6.8,34,1.1);state.solid.push({x:0,z:34,r:3,h:4});
@@ -102,10 +106,89 @@ function animateFisherman(){
   fishermanHat.position.set(0,.67,0);fishermanHat.rotation.set(.08,0,holder?-.18:.18);
  }else{
   if(fishermanHat.parent!==scene)scene.add(fishermanHat);
-  fishermanHat.position.set(hat.x,hat.place==='stool'?.88:.18,hat.z);
+  fishermanHat.position.set(hat.place==='nest'?nestDisplay('fisherman-hat').x:hat.x,hat.place==='nest'?nestDisplay('fisherman-hat').y:hat.place==='stool'?.88:.18,hat.place==='nest'?nestDisplay('fisherman-hat').z:hat.z);
   fishermanHat.rotation.set(0,0,hat.place==='ground'?.13:0);
  }
  feather.rotation.z=Math.sin(state.time*3)*.06;
+}
+// An open-front tree den: the collection stays visible from the shared camera.
+path([[0,28],[-7,29],[-12,40]],2.8);
+const nestDeck=group(NEST.x,NEST.y,NEST.z);
+box('#aa8058',0,-.23,0,[10,.45,8],nestDeck);
+for(let j=0;j<10;j++)box(j%2?'#c29c6b':'#d0ae7a',-4.5+j,0,0,[.92,.12,8],nestDeck);
+cyl('#8d6c49',NEST.x,4,NEST.z-3,1,8,scene,.65);
+state.solid.push({x:NEST.x,z:NEST.z-3,r:1,h:9});
+tube([[NEST.x,2,NEST.z-3],[NEST.x-3,4,NEST.z-1],[NEST.x-4,5,NEST.z+1]],.32,'#94714a');
+tube([[NEST.x,3,NEST.z-3],[NEST.x+3,4,NEST.z],[NEST.x+4,5,NEST.z+1]],.3,'#94714a');
+for(const side of [-1,1]){
+ ball('#6f995a',NEST.x+side*3,8.4,NEST.z-4,[3,1.7,2]);
+ ball('#89ad67',NEST.x+side*4.2,7.9,NEST.z-2,[1.6,1.3,1.5]);
+ box('#997651',side*4.8,.65,0,[.14,1.25,8],nestDeck);
+ tube([[side*4.7,1.2,3],[side*4.7,1.5,0],[side*4.7,1.2,-3]],.07,'#e6ce96',nestDeck);
+}
+box('#997651',0,.55,-3.8,[9.6,1.1,.14],nestDeck);
+for(const side of [-1,1])box('#e0c58c',NEST.ladder.x+side*.7,NEST.y/2,NEST.ladder.z,[.16,NEST.y,.2]);
+for(let y=.4;y<NEST.y;y+=.55)box('#cda871',NEST.ladder.x,y,NEST.ladder.z,[1.6,.13,.25]);
+textSprite('⌂',NEST.x,8.7,NEST.z+2.5,1.1,'#fff2cc','#678665');
+textSprite('E / ↵  ↑',NEST.ladder.x,1.4,NEST.ladder.z+.8,.7);
+// Pictorial wants: a soft cushion and a sparkle. Either matching find fits.
+const wantFrames=[];
+for(let i=0;i<2;i++){
+ const g=group(NEST.x+(i?1.65:-1.65),7.5,NEST.z-3.3);
+ const backing=box('#e8d4a7',0,0,0,[1.7,1.4,.12],g);wantFrames.push(backing);
+ if(i===0){
+  ball('#f5e8ce',0,0,.15,[.56,.32,.16],g);
+  for(const x of [-.45,.45])for(const y of [-.23,.23])ball('#f5e8ce',x,y,.14,[.17,.13,.1],g);
+ }else{
+  const a=box('#f7eecc',0,0,.16,[.16,.95,.12],g);a.rotation.z=.15;
+  const b=box('#f7eecc',0,0,.16,[.85,.16,.12],g);b.rotation.z=.15;
+  ball('#fff9e0',.4,.4,.15,[.09,.09,.08],g);
+ }
+}
+const shinyFindMaterial=new THREE.MeshStandardMaterial({color:'#d9dfc4',roughness:.22,metalness:.5});
+function makeFind(id){
+ const g=group();
+ if(id==='cushion'){
+  ball('#d9a391',0,.2,0,[.95,.3,.65],g);
+  for(const x of [-.78,.78])for(const z of [-.5,.5])ball('#e5b7a1',x,.2,z,[.22,.18,.2],g);
+  ball('#b87976',0,.44,0,[.09,.035,.09],g);
+ }else if(id==='feather'){
+  for(let j=0;j<7;j++)ball(j%2?'#d3dcbc':'#f4e3b8',0,.15,j*.23-.7,[.45*(1-j/9),.07,.3],g);
+  tube([[0,.19,-1],[0,.2,0],[0,.19,.9]],.035,'#baab83',g);
+ }else if(id==='shell'){
+  for(let j=0;j<7;j++){
+   const part=ball(shinyFindMaterial,Math.sin((j-3)*.23)*.55,.2,Math.cos((j-3)*.23)*.3,[.15,.25,.7],g);
+   part.rotation.y=(j-3)*.23;
+  }
+ }else{
+  ball(shinyFindMaterial,0,.16,.55,[.35,.09,.48],g);
+  box(shinyFindMaterial,0,.14,-.2,[.13,.09,1.15],g);
+ }
+ return g;
+}
+const findMeshes=FINDS.map(o=>makeFind(o.id));
+function animateNest(){
+ state.finds.forEach((item,i)=>{
+  const g=findMeshes[i];
+  if(item.place==='held'){
+   const hand=monkeys[item.heldBy].arms[1];if(g.parent!==hand)hand.add(g);
+   g.position.set(.13,-.85,.25);g.rotation.set(.3,0,.15);g.scale.setScalar(.7);
+  }else{
+   if(g.parent!==scene)scene.add(g);
+   const at=item.place==='nest'?nestDisplay(item.id):item;
+   g.position.set(at.x,at.y+.12,at.z);g.rotation.set(0,i*.6,0);g.scale.setScalar(1);
+  }
+ });
+ nestWants(state).forEach((want,i)=>wantFrames[i].material=mat(want.filled?'#a5c589':'#e8d4a7'));
+ persistNest();
+}
+function persistNest(){
+ if(savedNestRevision!==state.nest.revision){
+  savedNestRevision=state.nest.revision;
+  if(!saveNest(nestStorage,nestSave(state))&&!nestSaveWarning){
+   nestSaveWarning=true;toast('Your nest is safe for this adventure, but this browser could not save it for next time.');
+  }
+ }
 }
 // Articulated 3D monkeys, each with a contrasting scarf and curly tail.
 function monkey(color,i){
@@ -166,17 +249,17 @@ function handleOokEvent(event){
 function toast(text){$('toast').textContent=text;$('toast').hidden=false;toastUntil=time+4.5}
 function begin(){started=true;running=true;keys.clear();$('startOverlay').hidden=true;$('pauseOverlay').hidden=true;$('winOverlay').hidden=true;$('world').focus();last=performance.now()}
 function pause(){if(!started)return;running=false;keys.clear();$('pauseOverlay').hidden=false}
-function restart(){const solids=state.solid;state=createState();state.solid=solids;confetti.forEach(p=>scene.remove(p.m));confetti=[];toastUntil=0;winAt=0;begin();refresh()}
+function restart(){persistNest();const solids=state.solid,collection=nestSave(state);state=createState(collection);savedNestRevision=0;state.solid=solids;confetti.forEach(p=>scene.remove(p.m));confetti=[];toastUntil=0;winAt=0;begin();refresh()}
 $('start').onclick=begin;$('resume').onclick=begin;$('pause').onclick=pause;$('restart').onclick=restart;$('playAgain').onclick=restart;$('keepPlaying').onclick=begin;$('audio').onclick=()=>{muted=!muted;$('audio').textContent=muted?'♫ Sound off':'♫ Sound on';$('audio').setAttribute('aria-pressed',String(!muted));sound(500)};
 $('missionToggle').onclick=()=>{const list=$('missionList');list.hidden=!list.hidden;$('missionToggle').setAttribute('aria-expanded',String(!list.hidden))};let mapResume=false;function closeMap(){ $('mapOverlay').hidden=true;$('mapButton').setAttribute('aria-expanded','false');if(mapResume)begin() }$('mapButton').onclick=()=>{mapResume=running;running=false;keys.clear();$('mapOverlay').hidden=false;$('mapButton').setAttribute('aria-expanded','true');drawMap()};$('closeMap').onclick=closeMap;
 const handled=['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyE','Enter','KeyQ','Slash','Space','ShiftLeft','ShiftRight','Escape'];window.addEventListener('keydown',e=>{if(!handled.includes(e.code))return;if(e.target.tagName==='BUTTON'&&!running&&e.code==='Enter')return;e.preventDefault();if(e.repeat)return;if(e.code==='Escape'){if(!$('mapOverlay').hidden)closeMap();else if(running)pause();else if(started)begin();return}keys.add(e.code);if(!running)return;if(e.code==='KeyE')interact(state,0);if(e.code==='Enter')interact(state,1);if(e.code==='KeyQ')ook(state,0);if(e.code==='Slash')ook(state,1);if(e.code==='Space')jump(state,0);if(e.code==='ShiftLeft'||e.code==='ShiftRight')jump(state,1)});window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>{keys.clear();if(running)pause()});
 for(const pad of document.querySelectorAll('.touchpad')){const i=Number(pad.dataset.player),codes=i?['ArrowLeft','ArrowUp','ArrowDown','ArrowRight']:['KeyA','KeyW','KeyS','KeyD'];['←','↑','↓','→','Do','Jump','Ook'].forEach((label,j)=>{const b=document.createElement('button');b.textContent=label;b.setAttribute('aria-label',(i?'Momo ':'Pip ')+label);b.onpointerdown=e=>{e.preventDefault();b.setPointerCapture(e.pointerId);if(!running)return;if(j<4)keys.add(codes[j]);else if(j===4)interact(state,i);else if(j===5)jump(state,i);else ook(state,i)};b.onpointerup=b.onpointercancel=()=>{if(j<4)keys.delete(codes[j])};pad.appendChild(b)})}
-function contextHint(p,i){const key=i?'↵':'E';if(LADDERS.some(l=>dist(p,l)<3))return `${key} · ${p.y>3?'Climb down':'Climb into the canopy'}`;if(p.y>6&&[-35,-23].some(x=>dist(p,{x,z:-30})<3.5))return `${key} · Ring your bell — partner rings the other`;const d=DRUMS.find(d=>dist(p,d)<2.7);if(d)return `${key} · Play ${d.note}  |  Next: ${state.songComplete?'Encore!':DRUMS[SONG[state.band]].note}`;if(state.balls.some(b=>dist(p,b)<3.4))return `${key} · Roll this coconut`;if(PADS.some(t=>dist(p,t)<2))return 'Stay on your pedal. Your partner takes the other!';if(TRAMPOLINES.some(t=>dist(p,t)<3))return 'Bounce up through the golden hoop!';const hat=hatAction(state.fisherman,p,i);if(hat)return `${key} · ${hat==='take'?'Try on the hat':hat==='return'?'Put the hat back':'Put the hat down'}`;return ''}
+function contextHint(p,i){const key=i?'↵':'E';if(LADDERS.some(l=>dist(p,l)<3))return `${key} · ${p.y>3?'Climb down':'Climb into the canopy'}`;if(p.y>6&&[-35,-23].some(x=>dist(p,{x,z:-30})<3.5))return `${key} · Ring your bell — partner rings the other`;const d=DRUMS.find(d=>dist(p,d)<2.7);if(d)return `${key} · Play ${d.note}  |  Next: ${state.songComplete?'Encore!':DRUMS[SONG[state.band]].note}`;if(state.balls.some(b=>dist(p,b)<3.4))return `${key} · Roll this coconut`;if(PADS.some(t=>dist(p,t)<2))return 'Stay on your pedal. Your partner takes the other!';if(TRAMPOLINES.some(t=>dist(p,t)<3))return 'Bounce up through the golden hoop!';if(nestLadderAction(p))return `${key} · ${insideNest(p)?'Climb down':'Climb home'}`;const find=findAction(state,p);if(find)return `${key} · ${find.kind==='take'?'Pick up '+find.item.name:'Put it down'}`;const hat=hatAction(state.fisherman,p,i);if(hat)return `${key} · ${hat==='take'?'Try on the hat':hat==='return'?'Put the hat back':'Put the hat down'}`;return ''}
 let lastUI='';function refresh(){const ms=missions(state),nearest=nearZone(state.players[0]);const signature=JSON.stringify(ms.map(m=>[m.done,m.progress]))+nearest.id;if(signature!==lastUI){lastUI=signature;$('missionList').innerHTML=ms.map((m,i)=>`<div class="mission ${m.done?'done':m.zone.id===nearest.id?'active':''}"><div class="num">${m.done?'✓':i+1}</div><div><b>${m.short}</b><small>${m.zone.name} · ${m.progress}</small></div></div>`).join('');$('score').textContent=`${ms.filter(m=>m.done).length} / 5`}$('hint0').textContent=contextHint(state.players[0],0);$('hint1').textContent=contextHint(state.players[1],1);$('location').innerHTML=split?'Off on your own adventures<span>A WHOLE ISLAND TO EXPLORE</span>':`${nearest.name}<span>MONKEY ISLAND</span>`;$('location').style.opacity=($('hint0').textContent||$('hint1').textContent)?'0':'1'}
-function drawMap(){const c=$('map').getContext('2d');c.clearRect(0,0,640,530);c.fillStyle='#92c5ba';c.beginPath();c.roundRect(0,0,640,530,28);c.fill();c.fillStyle='#abc580';c.beginPath();c.roundRect(30,25,580,480,55);c.fill();const pt=(x,z)=>[320+x*5.4,260+z*5];c.strokeStyle='#e6d5a7';c.lineWidth=15;c.lineCap='round';ZONES.forEach(z=>{c.beginPath();c.moveTo(320,300);c.lineTo(...pt(z.x,z.z));c.stroke()});missions(state).forEach((m,i)=>{const [x,z]=pt(m.zone.x,m.zone.z);c.fillStyle=m.done?'#4e855f':m.zone.color;c.beginPath();c.arc(x,z,27,0,7);c.fill();c.fillStyle='#304f3c';c.textAlign='center';c.font='bold 20px system-ui';c.fillText(m.done?'✓':String(i+1),x,z+7);c.font='bold 14px system-ui';c.fillText(m.zone.name,x,z+49)});state.players.forEach((p,i)=>{const [x,z]=pt(p.x,p.z);c.fillStyle=i?'#75bedb':'#f5c94f';c.strokeStyle='#fff8dc';c.lineWidth=3;c.beginPath();c.arc(x,z,9,0,7);c.fill();c.stroke();c.fillStyle='#304c3d';c.font='bold 12px system-ui';c.fillText(i?'Momo':'Pip',x,z-16)})}
+function drawMap(){const c=$('map').getContext('2d');c.clearRect(0,0,640,530);c.fillStyle='#92c5ba';c.beginPath();c.roundRect(0,0,640,530,28);c.fill();c.fillStyle='#abc580';c.beginPath();c.roundRect(30,25,580,480,55);c.fill();const pt=(x,z)=>[320+x*5.4,260+z*5];c.strokeStyle='#e6d5a7';c.lineWidth=15;c.lineCap='round';ZONES.forEach(z=>{c.beginPath();c.moveTo(320,300);c.lineTo(...pt(z.x,z.z));c.stroke()});missions(state).forEach((m,i)=>{const [x,z]=pt(m.zone.x,m.zone.z);c.fillStyle=m.done?'#4e855f':m.zone.color;c.beginPath();c.arc(x,z,27,0,7);c.fill();c.fillStyle='#304f3c';c.textAlign='center';c.font='bold 20px system-ui';c.fillText(m.done?'✓':String(i+1),x,z+7);c.font='bold 14px system-ui';c.fillText(m.zone.name,x,z+49)});const [nx,nz]=pt(NEST.x,NEST.z);c.fillStyle='#fff0c8';c.font='bold 28px system-ui';c.fillText('⌂',nx,nz);c.font='bold 12px system-ui';c.fillText('Nest',nx,nz+18);state.players.forEach((p,i)=>{const [x,z]=pt(p.x,p.z);c.fillStyle=i?'#75bedb':'#f5c94f';c.strokeStyle='#fff8dc';c.lineWidth=3;c.beginPath();c.arc(x,z,9,0,7);c.fill();c.stroke();c.fillStyle='#304c3d';c.font='bold 12px system-ui';c.fillText(i?'Momo':'Pip',x,z-16)})}
 const cameraDesired=new THREE.Vector3();function cameraFor(cam,target,index,aspect,distance,dt){cam.aspect=aspect;cam.updateProjectionMatrix();targets[index].lerp(target,1-Math.exp(-dt*4));const t=targets[index];const portrait=Math.max(1,1.25/aspect);cameraDesired.set(t.x,t.y+distance*.88*portrait,t.z+distance*1.08*portrait);cam.position.lerp(cameraDesired,1-Math.exp(-dt*4));cam.lookAt(t.x,t.y+.8,t.z);}
 function render(dt){const a=state.players[0],b=state.players[1],gap=dist(a,b);if(gap>27)split=true;else if(gap<21)split=false;$('splitLine').hidden=!split;let w=innerWidth,h=innerHeight;renderer.setScissorTest(split);if(split){for(let i=0;i<2;i++){const p=state.players[i],cw=w/2;cameraFor(cameras[i+1],new THREE.Vector3(p.x,p.y*.6,p.z),i+1,cw/h,18,dt);renderer.setViewport(i*cw,0,cw,h);renderer.setScissor(i*cw,0,cw,h);renderer.render(scene,cameras[i+1])}}else{const cam=cameras[0];cameraFor(cam,new THREE.Vector3((a.x+b.x)/2,(a.y+b.y)*.3,(a.z+b.z)/2),0,w/h,Math.max(20,17+gap*.6),dt);renderer.setViewport(0,0,w,h);renderer.render(scene,cam)}}
-function animate(t){const dt=Math.min(.04,(t-last)/1000);last=t;if(running){time+=dt;const axes=[[Number(keys.has('KeyD'))-Number(keys.has('KeyA')),Number(keys.has('KeyS'))-Number(keys.has('KeyW'))],[Number(keys.has('ArrowRight'))-Number(keys.has('ArrowLeft')),Number(keys.has('ArrowDown'))-Number(keys.has('ArrowUp'))]];step(state,dt,axes);for(const e of state.events.splice(0)){if(handleOokEvent(e))continue;if(e.type==='bonk'){sound(135,.14)}else if(e.type==='land'){sound(95,.055)}else if(e.type==='note'){sound([262,330,392,440][Math.max(0,DRUMS.findIndex(d=>d.note===e.text))],.25);const j=DRUMS.findIndex(d=>d.note===e.text);if(j>=0)drums[j].scale.y=2}else if(e.type==='bounce'){sound(210,.16)}else if(e.type==='bell'){sound(880,.5);toast(e.text)}else{toast(e.text);if(e.type==='win'||e.type==='pin'){sound(e.type==='win'?660:170,.2);celebrate(e.x,e.z)}if(e.type==='complete'){winAt=time+2.6;}}}if(time>toastUntil)$('toast').hidden=true;if(winAt&&time>=winAt){winAt=0;$('winOverlay').hidden=false;running=false;keys.clear()}}
+function animate(t){const dt=Math.min(.04,(t-last)/1000);last=t;if(running){time+=dt;const axes=[[Number(keys.has('KeyD'))-Number(keys.has('KeyA')),Number(keys.has('KeyS'))-Number(keys.has('KeyW'))],[Number(keys.has('ArrowRight'))-Number(keys.has('ArrowLeft')),Number(keys.has('ArrowDown'))-Number(keys.has('ArrowUp'))]];step(state,dt,axes);for(const e of state.events.splice(0)){if(e.type==='nest-deposit'){sound(520,.2);sound(780,.3,.18);continue;}if(handleOokEvent(e))continue;if(e.type==='bonk'){sound(135,.14)}else if(e.type==='land'){sound(95,.055)}else if(e.type==='note'){sound([262,330,392,440][Math.max(0,DRUMS.findIndex(d=>d.note===e.text))],.25);const j=DRUMS.findIndex(d=>d.note===e.text);if(j>=0)drums[j].scale.y=2}else if(e.type==='bounce'){sound(210,.16)}else if(e.type==='bell'){sound(880,.5);toast(e.text)}else{toast(e.text);if(e.type==='win'||e.type==='pin'){sound(e.type==='win'?660:170,.2);celebrate(e.x,e.z)}if(e.type==='complete'){winAt=time+2.6;}}}if(time>toastUntil)$('toast').hidden=true;if(winAt&&time>=winAt){winAt=0;$('winOverlay').hidden=false;running=false;keys.clear()}}
 state.players.forEach((p,i)=>{
  const m=monkeys[i],acting=pose(p,i,time),moving=p.moving;
  const carried=isCarried(state.fisherman,i),f=state.fisherman,blend=Math.min(1,f.clock/.125);
@@ -209,7 +292,7 @@ state.players.forEach((p,i)=>{
  bonkLabels[i].visible=acting.bonk;bonkLabels[i].position.set(p.x,p.y+3.85,p.z);
  loveLabels[i].visible=acting.greet&&!acting.bonk&&!acting.calling;loveLabels[i].position.set(p.x,p.y+3.8+Math.sin(time*3)*.12,p.z);
 });
-animateFisherman();
+animateFisherman();animateNest();
 bellMeshes.forEach((b,i)=>b.rotation.z=state.bellUntil[i]>state.time?Math.sin(time*15)*.3:0);drums.forEach(d=>d.scale.y+=(1-d.scale.y)*dt*9);pedals.forEach((p,i)=>{const down=state.players.some(a=>dist(a,PADS[i])<1.9);p.position.y=down?.1:.2;p.material=mat(down?'#fff0a3':i?'#8fcbd6':'#f2ca61')});bubbles.forEach((b,i)=>{b.visible=state.bubbles||state.foam>1;if(!b.visible)return;const d=b.userData,t=(time*.17+d.phase)%1;b.position.set(-29+d.dx*t,1.7+t*11,22+d.dz*t);b.scale.setScalar(d.r*(.4+t));});pins.forEach((p,i)=>{const target=state.pins[i].down?-Math.PI/2:0;p.rotation.x+=(target-p.rotation.x)*dt*10});coconuts.forEach((g,i)=>{const b=state.balls[i];g.position.set(b.x,.74,b.z);if(running)g.rotation.x+=b.vz*dt*1.3});hoopMeshes.forEach((h,i)=>{h.material=mat(state.hoops[i]?'#9bd9a8':'#f4d474');h.rotation.z=time*.2;h.position.y=5+Math.sin(time*2+i)*.1});birds.forEach((bird,i)=>{const at=birdPose(state.birds[i],state.time);bird.g.position.set(at.x,at.y,at.z);bird.g.rotation.set(0,at.facing,at.tilt)});bunting.forEach((f,i)=>f.rotation.x=Math.sin(time*2+i)*.1);
 if(running)confetti=confetti.filter(p=>{p.life-=dt;p.v.y-=12*dt;p.m.position.addScaledVector(p.v,dt);p.m.rotation.x+=dt*4;if(p.life<=0){scene.remove(p.m);return false}return true});refresh();render(Math.max(dt,.001));requestAnimationFrame(animate)}
 function resize(){renderer.setSize(innerWidth,innerHeight);cameras.forEach(c=>{c.aspect=innerWidth/innerHeight;c.updateProjectionMatrix()})}window.addEventListener('resize',resize);resize();cameras.forEach(c=>{c.position.set(0,22,39);c.lookAt(0,0,8)});$('start').disabled=false;$('start').textContent='Let’s explore →';refresh();requestAnimationFrame(animate);

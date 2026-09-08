@@ -49,6 +49,7 @@ export function fishermanSees(f,p){
 }
 
 export function hatAction(f,p,i){
+  if(f.hat.place==='nest'||(p.heldItem&&p.heldItem!=='fisherman-hat'))return null;
   if(p.heldItem==='fisherman-hat')return distance(p,HAT_HOME)<2.5&&p.y<1?'return':'drop';
   if(f.hat.heldBy===null&&distance(p,f.hat)<2.5&&p.y<1)return 'take';
   return null;

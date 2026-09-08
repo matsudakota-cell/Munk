@@ -50,7 +50,7 @@ Phase 1 has been played by the children and approved for moving on.
 
 Find the fisherman beside the little pond to the right of Munks HQ, near the bottom of the island. His straw hat rests on a low stool. Walk up and press `E` or `Enter` to wear it. If he is looking toward shore, he makes a slow double-take. If he is watching the water, he only notices on his next glance at the stool.
 
-Use interact near the stool to put it back, or elsewhere to set it down for either monkey to pick up. Existing mission interactions keep priority. The hat follows the monkey through jumps, bonks, and ooks. There is no reward or extra checklist entry. Restart resets the hat and fisherman along with the game.
+Use interact near the stool to put it back, or elsewhere to set it down for either monkey to pick up. Existing mission interactions keep priority. The hat follows the monkey through jumps, bonks, and ooks. There is no reward or extra checklist entry. Restart resets the fisherman and any hat that has not been brought home to the nest.
 
 Phase 2 has been approved for moving on.
 
@@ -68,9 +68,23 @@ After a full exasperated performance, the fisherman leaves his rod and chair to 
 
 Jumps can be noticed at any point in their visible flight, once per jump, so hopping while he turns toward you counts even if he missed takeoff.
 
-If he catches that monkey, he gently picks them up, carries them a few steps, and puts them down. Movement and interaction resume on release; ooks still work during the lift. Only their held hat is returned, and their attention resets to zero. Their partner stays free, keeps their own belongings, and cannot become the chase target. Completed missions and other progress remain intact. No respawn screen, score penalty, or game over.
+If he catches that monkey, he gently picks them up, carries them a few steps, and puts them down. Movement and interaction resume on release; ooks still work during the lift. Only their held object returns to its original spot, and their attention resets to zero. Their partner stays free, keeps their own belongings, and cannot become the chase target. Completed missions and deposited nest treasures remain intact. No respawn screen, score penalty, or game over.
 
-Pause freezes the chase and carry. Restart returns everyone to the starting state. Phase 4 awaits a family playtest before the persistent tree nest in Phase 5.
+Pause freezes the chase and carry. Restart returns everyone to the starting state while keeping the nest collection. The chase fix has been played and Phase 4 approved for moving on.
+
+## Phase 5: a home for your finds
+
+The open tree nest is left of Munks HQ. Look for the house symbol on the map and the ladder. Either monkey can press `E` / `Enter` at the ladder to climb in or out; both can explore the nest together.
+
+Pick up a cushion, feather, pearly shell, or shiny spoon with interact. Carry a find up the ladder and it automatically becomes a permanent, visible decoration. The fisherman’s hat can become a souvenir too: once deposited, it stays in the nest instead of returning to his stool. He still reacts to ooks and jumps.
+
+Two pictures suggest something soft and something shiny. The cushion or feather fits the soft picture; the shell or spoon fits the shiny picture. Matching pictures turn green, but collecting is optional and has no deadline, score, or checklist. Every find has a physical place in the den.
+
+The collection saves in this browser and profile using localStorage. Refreshing the page or starting a fresh adventure keeps it. Other browsers, devices, the local preview, and the downloadable game have separate collections. Clearing site data clears the collection. If storage is unavailable, the current adventure stays playable and a message explains that the nest could not be saved for next time.
+
+Only deposited object IDs are persisted, under `munks.nest.v1`; transient missions, positions, held items, and attention start fresh. Invalid saves are handled safely. There is no collection reset button, so restarting cannot accidentally erase the nest.
+
+Phase 5 awaits the family playtest: do the kids want to show someone their nest? More dramatic reactions remain a later polish pass; Phase 6 is mimicry.
 
 ## Run locally
 
@@ -106,12 +120,16 @@ The tests cover response variety and rarity, repeatable reaction selection, inpu
 - `public/fisherman.mjs` — the single fisherman’s routine, sight checks, and hat ownership.
 - `public/fisherman-personality.mjs` — pure acting poses for idle and discovery beats.
 - `public/fisherman-movement.mjs` — bounded foot chases, gentle carries, safe release, and return routes.
+- `public/nest.mjs` — nest entry, collectible ownership, permanent deposits, and pictorial wants.
+- `public/nest-storage.mjs` — validated collection saves and graceful storage failure handling.
 - `public/vendor/` — locally served Three.js runtime and its license.
 - `tests/` — gameplay and reaction checks using Node's built-in test runner.
 
 Ook response selection and bird reaction timing live in `game-core.mjs`; `pose()` in `monkey-personality.mjs` supplies acting values; `game.js` applies them to the existing models and plays sound. Proximity is checked when a player ooks, not every rendered frame. Reaction selection uses its own seeded sequence, independent of decoration randomness.
 
 The fisherman follows the same rules/acting/render split. His routine and discovery decisions tick at 8 Hz; taking the hat checks range and facing once at interaction time. Rendering interpolates the acting, with no raycasts, new dependencies, or loaded assets. Tests cover immediate versus delayed discovery, single hat ownership, returning and exchanging the hat, input freedom, and scene attachment through pause/restart. Humor still needs a family playtest.
+
+Nest tests cover both players entering and depositing, alternative wants, exchanged and dropped finds, catches, persistence validation, unavailable storage, and restoration of the physical display on a fresh page. The scene test uses real Three.js objects with GPU drawing stubbed; it does not replace a browser visual check or family playtest.
 
 ## Design principles
 

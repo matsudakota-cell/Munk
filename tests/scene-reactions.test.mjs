@@ -13,7 +13,8 @@ test('real character rigs render reaction states, freeze on pause, and recover o
     getContext(){return context},querySelector(){return element()}});
   globalThis.document={getElementById(id){if(!nodes.has(id))nodes.set(id,element());return nodes.get(id)},
     createElement:element,querySelectorAll:()=>[]};
-  globalThis.window={addEventListener(type,fn){listeners.set(type,fn)}};
+  const saved=new Map();
+  globalThis.window={localStorage:{getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value)},addEventListener(type,fn){listeners.set(type,fn)}};
   globalThis.innerWidth=1440;globalThis.innerHeight=900;globalThis.devicePixelRatio=1;
   globalThis.requestAnimationFrame=fn=>{frame=fn};
   Object.defineProperty(globalThis,'performance',{configurable:true,value:{now:()=>now}});
@@ -35,10 +36,10 @@ test('real character rigs render reaction states, freeze on pause, and recover o
     }
     const THREE={...RealThree,WebGLRenderer:TestRenderer};
   `);
-  for(const name of ['game-core.mjs','monkey-personality.mjs','fisherman.mjs','fisherman-personality.mjs','fisherman-movement.mjs']){
+  for(const name of ['game-core.mjs','monkey-personality.mjs','fisherman.mjs','fisherman-personality.mjs','fisherman-movement.mjs','nest.mjs','nest-storage.mjs']){
     source=source.replace(`from './${name}'`,`from '${new URL('../public/'+name,import.meta.url).href}'`);
   }
-  const game=await import('data:text/javascript;base64,'+Buffer.from(source+'\nexport {state,scene,monkeys,birds,fishermanRig,fishermanHat};').toString('base64'));
+  const game=await import('data:text/javascript;base64,'+Buffer.from(source+'\nexport {state,scene,monkeys,birds,fishermanRig,fishermanHat,findMeshes,wantFrames};').toString('base64'));
   function advance(seconds){for(let n=0;n<Math.ceil(seconds/.02);n++){now+=20;frame(now)}}
   function key(code){listeners.get('keydown')({code,repeat:false,target:{tagName:'DIV'},preventDefault(){}})}
   const count=()=>{let n=0;game.scene.traverse(()=>n++);return n};
@@ -82,4 +83,19 @@ test('real character rigs render reaction states, freeze on pause, and recover o
   advance(.1);assert(window.munks.getState().running);
   assert.equal(game.fishermanRig.rod.parent,game.fishermanRig.body);
   assert.equal(count(),objects,'chases and restart do not accumulate models');
+  Object.assign(game.state.players[0],{x:-9,z:21,y:0});key('KeyE');advance(.1);
+  assert.equal(game.findMeshes[0].parent,game.monkeys[0].arms[1]);
+  Object.assign(game.state.players[0],{x:-12,z:38,y:0});key('KeyE');advance(.1);
+  assert.equal(game.state.players[0].y,5);
+  assert.equal(game.findMeshes[0].parent,game.scene);
+  assert(game.findMeshes[0].position.y>5,'treasure is visibly on the nest floor');
+  assert(JSON.parse(saved.get('munks.nest.v1')).deposited.includes('cushion'));
+  nodes.get('restart').onclick();advance(.1);
+  assert(game.state.nest.deposited.includes('cushion'));
+  assert(game.findMeshes[0].position.y>5);
+  assert.equal(count(),objects,'nest deposits and restart reuse the same physical objects');
+  const reloaded=await import('data:text/javascript;base64,'+Buffer.from(source+'\nexport {state,findMeshes};\n// Fresh page, same browser storage.').toString('base64'));
+  now+=20;frame(now);
+  assert(reloaded.state.nest.deposited.includes('cushion'));
+  assert(reloaded.findMeshes[0].position.y>5,'a fresh page restores the physical display');
 });
