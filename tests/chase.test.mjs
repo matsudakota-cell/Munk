@@ -6,6 +6,16 @@ import {FISHERMAN} from '../public/fisherman.mjs';
 const advance=(s,n,axes=[[0,0],[0,0]])=>{for(let t=0;t<n;t+=.025)step(s,.025,axes)};
 function ready(){const s=createState();Object.assign(s.players[0],{x:12,z:37,y:0});return s;}
 
+test('one witnessed theft interrupts mimicry and starts a faster chase without extra antics',()=>{
+ const s=ready(),f=s.fisherman;Object.assign(s.players[0],{x:14,z:37});
+ f.routine=7;f.social={kind:'wave',age:.5,player:1};f.noticeCooldown[0]=.6;
+ interact(s,0);assert.equal(f.social,null);assert.equal(f.reaction.tier,3);
+ assert.equal(f.reaction.duration,1.25);assert.equal(f.attention[1],0);
+ s.players[0].x=18;advance(s,1.25);assert.equal(f.motion.kind,'chase');
+ const start={x:f.x,z:f.z};advance(s,.25);
+ assert(Math.hypot(f.x-start.x,f.z-start.z)>1.4,'run speed exceeds the former slow jog');
+});
+
 test('exasperated performance ends in a chase of only its own monkey',()=>{
  const s=ready();s.fisherman.reaction={kind:'mischief',tier:3,player:0,age:4.875,startFacing:0};
  advance(s,.125);assert.equal(s.fisherman.motion.kind,'chase');assert.equal(s.fisherman.motion.player,0);

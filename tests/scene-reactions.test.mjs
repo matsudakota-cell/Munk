@@ -57,7 +57,7 @@ test('real character rigs render reaction states, freeze on pause, and recover o
   assert.equal(nodes.get('toast').textContent,'','reaction events do not flood the mission toast');
   Object.assign(game.state.players[0],{x:14,z:37,y:0});
   game.state.fisherman.routine=7;
-  key('KeyE');advance(2.2);
+  key('KeyE');advance(.55);
   assert.equal(game.fishermanHat.parent,game.monkeys[0].head);
   assert(game.fishermanRig.mouth.scale.y>.1,'double take has a readable open mouth');
   nodes.get('pause').onclick();const age=game.state.fisherman.reaction.age;

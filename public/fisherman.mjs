@@ -3,11 +3,12 @@ export const FISHERMAN={x:12,z:36};
 export const HAT_HOME={x:14,z:37};
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
+export const fishermanReactionAge=f=>(f.reaction.age+f.clock)*5/(f.reaction.duration??5);
 export function fishermanFacing(f){
   if(f.motion.kind!=='idle')return f.facing;
   if(f.social&&!f.reaction)return 0;
   if(f.reaction){
-    const age=f.reaction.age+f.clock;
+    const age=fishermanReactionAge(f);
     return (f.reaction.startFacing??0)*(1-smooth(age/.65))+Math.PI*smooth(age-4);
   }
   const t=f.routine+f.clock;
@@ -28,7 +29,7 @@ export function noticeMischief(f,p,i,kind){
   // Only the monkey doing the witnessed action earns attention. Possession,
   // proximity and a missing hat never assign another monkey's actions to them.
   if(f.motion.kind!=='idle'||!fishermanSees(f,p)||f.noticeCooldown[i]>0)return false;
-  const gain={ook:12,jump:12,hat:24}[kind];
+  const gain={ook:12,jump:12,hat:60}[kind];
   if(!gain)return false;
   f.attention[i]=Math.min(100,f.attention[i]+gain);
   f.noticeCooldown[i]=.7;f.lastNoticed=i;
@@ -63,12 +64,13 @@ export function interactHat(f,p,i){
     const seen=fishermanSees(f,p);
     f.hat.place='held';f.hat.heldBy=i;p.heldItem='fisherman-hat';
     if(seen&&f.motion.kind==='idle'){
-      const wasReacting=!!f.reaction;
+      const startFacing=fishermanFacing(f);
+      // A real theft interrupts a friendly gesture and earns an immediate response,
+      // even if an ook just used this monkey's ordinary attention cooldown.
+      f.noticeCooldown[i]=0;
       noticeMischief(f,p,i,'hat');
-      if(!wasReacting){
-        const startFacing=f.reaction?.startFacing??fishermanFacing(f);
-        f.reaction={kind:'double_take',age:0,startFacing,player:i,tier:attentionTier(f.attention[i])};
-      }
+      f.social=null;
+      f.reaction={kind:'double_take',age:0,duration:1.25,startFacing,player:i,tier:3};
       f.missingNoticed=true;
     }
   }else{
@@ -103,7 +105,7 @@ export function stepFisherman(f,dt,players=[],solid=[]){
     if(f.reaction){
       f.social=null;
       f.reaction.age+=.125;
-      if(f.reaction.age>=5){
+      if(f.reaction.age>=(f.reaction.duration??5)){
         const r=f.reaction;f.facing=fishermanFacing(f);f.reaction=null;f.routine=0;
         if(r.tier===3&&players[r.player])startChase(f,r.player);
       }

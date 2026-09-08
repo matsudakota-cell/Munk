@@ -1,4 +1,4 @@
-import {fishermanFacing,attentionTier} from './fisherman.mjs';
+import {fishermanFacing,fishermanReactionAge,attentionTier} from './fisherman.mjs';
 import {fishermanGesture} from './mimicry.mjs';
 const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
 export function fishermanPose(f){
@@ -43,7 +43,7 @@ export function fishermanPose(f){
     }
     return a;
   }
-  const age=f.reaction.age+f.clock;
+  const age=fishermanReactionAge(f);
   const first=smooth(age/.65),second=smooth((age-1.5)/.45),settle=1-smooth((age-3.8)/1.2);
   // Look, look away, then a bigger second look. A missing hat starts with a pat.
   a.headTurn=(first*.7-smooth((age-.85)/.4)*1.2+second*1.1)*settle;

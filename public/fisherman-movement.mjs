@@ -58,7 +58,7 @@ export function stepFishermanMovement(f,players,solid,anchor){
       f.motion={kind:'carry',player:m.player,age:0,pickup:{x:p.x,z:p.z},
         destination:{x:f.x+Math.sin(f.facing)*3,z:f.z+Math.cos(f.facing)*3}};
     }else{
-      m.stuck=move(f,p,4.2,solid)?0:m.stuck+.125;
+      m.stuck=move(f,p,6.2,solid)?0:m.stuck+.125;
     }
   }
   if(f.motion.kind==='carry'){

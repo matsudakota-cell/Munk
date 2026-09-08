@@ -24,7 +24,7 @@ test('unseen actions, missing hats and handoffs do not transfer attention',()=>{
  interactHat(f,a,0);assert.equal(f.hat.place,'stool');
  // Taking the hat is a new action by this monkey, never inherited blame.
  f.reaction=null;f.routine=7;interactHat(f,b,1);
- assert.equal(f.attention[0],0);assert.equal(f.attention[1],24);
+ assert.equal(f.attention[0],0);assert.equal(f.attention[1],60);
  assert.equal(noticeMischief(f,{...p,y:7},0,'ook'),false);
  assert.equal(noticeMischief(f,{...p,x:40},0,'ook'),false);
 });
@@ -32,7 +32,7 @@ test('unseen actions, missing hats and handoffs do not transfer attention',()=>{
 test('spam is bounded, attention cools completely and poses get visibly bigger',()=>{
  const f=createFisherman();f.routine=7;
  for(let i=0;i<1000;i++)noticeMischief(f,p,0,'hat');
- assert.equal(f.attention[0],24);
+ assert.equal(f.attention[0],60);
  f.reaction={kind:'mischief',player:0,tier:2,age:2,startFacing:0};
  const mild=fishermanPose(f);f.reaction.tier=3;const big=fishermanPose(f);
  assert(big.leftArm<mild.leftArm&&big.mouth>mild.mouth&&big.rod>mild.rod);

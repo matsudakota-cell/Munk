@@ -48,7 +48,7 @@ Phase 1 has been played by the children and approved for moving on.
 
 ## Phase 2: the fisherman’s hat
 
-Find the fisherman beside the little pond to the right of Munks HQ, near the bottom of the island. His straw hat rests on a low stool. Walk up and press `E` or `Enter` to wear it. If he is looking toward shore, he makes a slow double-take. If he is watching the water, he only notices on his next glance at the stool.
+Find the fisherman beside the little pond to the right of Munks HQ, near the bottom of the island. His straw hat rests on a low stool. Walk up and press `E` or `Enter` to wear it. If he sees the theft, he makes a quick double-take and starts chasing after 1.25 seconds. If he is watching the water, he only notices on his next glance at the stool.
 
 Use interact near the stool to put it back, or elsewhere to set it down for either monkey to pick up. Existing mission interactions keep priority. The hat follows the monkey through jumps, bonks, and ooks. There is no reward or extra checklist entry. Restart resets the fisherman and any hat that has not been brought home to the nest.
 
@@ -56,7 +56,7 @@ Phase 2 has been approved for moving on.
 
 ## Phase 3: increasingly suspicious
 
-Ook, jump, or take the hat where the fisherman can see you. Each monkey has their own attention: he starts oblivious, becomes suspicious with squints and muttering, then throws both hands up in exasperation. Repeat witnessed antics to get the bigger performance. Quiet time gradually calms him down.
+Ook or jump where the fisherman can see you. Each monkey has their own attention: he starts oblivious, becomes suspicious with squints and muttering, then throws both hands up in exasperation. Repeat witnessed antics to get the bigger performance. A witnessed hat theft goes straight to exasperation and a quick chase, interrupting friendly mimicry; no extra ooks are needed. Quiet time gradually calms him down.
 
 Attention drives his acting and, with Phase 4, a short chase after an exasperated performance. Unseen theft can make him discover an empty stool, but he does not blame a monkey he never saw. Passing the hat never transfers attention. Restart clears both monkeys’ attention.
 
@@ -64,7 +64,7 @@ Phase 3 has been approved for moving on. More islanders are a later addition.
 
 ## Phase 4: a very short pursuit
 
-After a full exasperated performance, the fisherman leaves his rod and chair to jog after the monkey he saw. He is slower than the monkeys, stays on foot, and gives up when they reach elevated ground or escape. Ordinary jumps keep the pursuit going, but he can only catch a monkey after they land. After a short pursuit he stops to catch his breath, then walks his route back to the pond, muttering.
+After an exasperated performance (shortened to 1.25 seconds for witnessed theft), the fisherman leaves his rod and chair to run after the monkey he saw. His run is now 6.2 units per second, up from 4.2, against the monkeys’ 8.3. He stays on foot and gives up when they reach elevated ground or escape. Ordinary jumps keep the pursuit going, but he can only catch a monkey after they land. After a short pursuit he stops to catch his breath, then walks his route back to the pond, muttering.
 
 Jumps can be noticed at any point in their visible flight, once per jump, so hopping while he turns toward you counts even if he missed takeoff.
 
