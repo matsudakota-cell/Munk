@@ -96,7 +96,24 @@ The monkeys can copy each other’s stretches, salutes, waves, and imitations to
 
 Outside a matching gesture, the ook button keeps its normal behavior. Movement, jumping, collecting, and mission interactions still work during imitations. Pause freezes the exchange; restart clears the transient gestures while keeping the nest collection. No new buttons or dependencies were added.
 
-Mimicry and the nest are ready for the weekend playtest. More NPCs and Easter eggs remain future additions; Phase 7 in the original brief adds anchor and relay mission shapes.
+Mimicry and the nest are ready for the weekend playtest. The owner authorized Phase 7 and two new neighbors before that playtest.
+
+## Phase 7: garden and fruit-stand teamwork
+
+Tilly the gardener lives west of Cloud Hoppers; Bongo the fruit seller is to the east. Both appear on the map. Tilly wears glasses and an apron; Bongo has a striped shirt, enormous moustache, and banana hat. Nearby ooks and playing with their props produce increasingly animated, per-monkey reactions that cool down over time. They currently react in place; the fisherman's repeatable chase remains his own behavior. Bigger chase acting is still a later polish task.
+
+Four bonus activities appear under **New monkey business**, separately from the original five missions:
+
+- **Giant flower:** press E / Enter at the gold hand marker to hold the vine. The other monkey uses the blue flower marker to climb to the lookout. Press again to descend, even if the holder has left.
+- **Banana shower:** one monkey holds the gold crank; the other shakes the blue marked end of the stand. Bongo raises his umbrella under falling bananas.
+- **Watering can catch:** pick up the blue can in front of the garden and pass it back and forth four times without a drop.
+- **Fruit basket catch:** do the same with the basket in front of the fruit stand. Bongo celebrates the fourth catch.
+
+Either player can take either role. Pressing the existing interact button starts or releases a hold; walking away or jumping also releases it. Solo flower tickles and stand wiggles still animate the scene. Carry a relay prop near its neighborhood and press interact to throw toward a nearby, grounded, empty-handed buddy. The catch is automatic if they stay near the landing spot. With no available buddy, the monkey juggles it alone. There is no deadline between passes. A miss puts the prop on the ground and resets only that unfinished catch chain; completed activities stay complete. Outside the neighborhood, interact sets the prop down as usual.
+
+The nest can permanently display both new props. The neighbors put out spares when a prop is deposited, so collecting does not remove their catch games. Nest displays persist across reloads; bonus activity progress, like the original mission progress, starts fresh with each adventure. No buttons, camera behavior, original mission rules, or dependencies changed.
+
+Rules and NPC decisions run at 8 Hz in `island-activities.mjs`; `neighbor-personality.mjs` supplies pure poses and `island-scene.mjs` builds and animates the neighborhoods using the existing scene helpers. Tests cover both roles, all four completions, solo play, abandoned holds, missed catches, busy hands, nest spares, and the existing fisherman regressions. The children's enjoyment and visual readability still need the family playtest.
 
 ## Run locally
 
@@ -134,6 +151,9 @@ The tests cover response variety and rarity, repeatable reaction selection, inpu
 - `public/fisherman-movement.mjs` — bounded foot chases, gentle carries, safe release, and return routes.
 - `public/nest.mjs` — nest entry, collectible ownership, permanent deposits, and pictorial wants.
 - `public/nest-storage.mjs` — validated collection saves and graceful storage failure handling.
+- `public/island-activities.mjs` — the two anchor and two relay activities, plus low-frequency neighbor reactions.
+- `public/island-scene.mjs` — garden, fruit stand, and neighbor rigs using the existing scene helpers.
+- `public/neighbor-personality.mjs` — pure Tilly and Bongo acting values.
 - `public/mimicry.mjs` — gesture matching, deliberate imitations, and character-specific gesture poses.
 - `public/vendor/` — locally served Three.js runtime and its license.
 - `tests/` — gameplay and reaction checks using Node's built-in test runner.

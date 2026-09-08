@@ -1,6 +1,7 @@
 import {createFisherman,interactHat,stepFisherman,noticeMischief} from './fisherman.mjs';
 import {isCarried} from './fisherman-movement.mjs';
 import {tryMimic,stepMimicry} from './mimicry.mjs';
+import {createActivities,interactActivity,stepActivities,activityFloor,ookNeighbors} from './island-activities.mjs';
 import {restoreNest,nestFloor,climbNest,depositAtNest,interactFind,returnCarriedFind} from './nest.mjs';
 export const ZONES=[{id:'bells',name:'Canopy Club',x:-29,z:-28,color:'#ebc95b'},{id:'band',name:'Jungle Jam',x:28,z:-28,color:'#eb987c'},{id:'bubbles',name:'Bubble Works',x:-29,z:25,color:'#8edce3'},{id:'bowling',name:'Coconut Lanes',x:29,z:25,color:'#bfcc72'},{id:'bounce',name:'Cloud Hoppers',x:0,z:0,color:'#d2b3e9'}];
 export const PADS=[{x:-34,z:25},{x:-24,z:25}];
@@ -10,7 +11,7 @@ export const SONG=[0,1,2,3,2,0];
 export const TRAMPOLINES=[{x:-5,z:0},{x:0,z:-3},{x:5,z:0}];
 export const TARGETS=Array.from({length:6},(_,i)=>({x:26+(i%3)*3,z:16-Math.floor(i/3)*3}));
 export const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
-export function createState(saved){const s={players:[{x:-2,z:12,y:0,vy:0,angle:0,walk:0,ook:0,air:false,bump:0,bumpCooldown:0,land:0,cheer:0,hello:0,idle:0,moving:false,reaction:null,lastReaction:null,heldItem:null},{x:2,z:12,y:0,vy:0,angle:0,walk:0,ook:0,air:false,bump:0,bumpCooldown:0,land:0,cheer:0,hello:0,idle:0,moving:false,reaction:null,lastReaction:null,heldItem:null}],fisherman:createFisherman(),time:0,reactionSeed:0x6d756e6b,birds:Array.from({length:7},(_,i)=>({x:-12+i*4,z:10+i%2*6,phase:i*.87,scatter:null,cooldown:0})),bells:[false,false],bellUntil:[0,0],bellPlayers:[-1,-1],band:0,bandPlayers:[],songComplete:false,foam:0,bubbles:false,pins:TARGETS.map(t=>({...t,down:false})),balls:[{x:26,z:32,vx:0,vz:0},{x:29,z:32,vx:0,vz:0},{x:32,z:32,vx:0,vz:0}],hoops:[false,false,false],bouncers:[],events:[],celebrated:false,solid:[]};restoreNest(s,saved);return s}
+export function createState(saved){const s={players:[{x:-2,z:12,y:0,vy:0,angle:0,walk:0,ook:0,air:false,bump:0,bumpCooldown:0,land:0,cheer:0,hello:0,idle:0,moving:false,reaction:null,lastReaction:null,heldItem:null},{x:2,z:12,y:0,vy:0,angle:0,walk:0,ook:0,air:false,bump:0,bumpCooldown:0,land:0,cheer:0,hello:0,idle:0,moving:false,reaction:null,lastReaction:null,heldItem:null}],fisherman:createFisherman(),time:0,reactionSeed:0x6d756e6b,birds:Array.from({length:7},(_,i)=>({x:-12+i*4,z:10+i%2*6,phase:i*.87,scatter:null,cooldown:0})),bells:[false,false],bellUntil:[0,0],bellPlayers:[-1,-1],band:0,bandPlayers:[],songComplete:false,foam:0,bubbles:false,pins:TARGETS.map(t=>({...t,down:false})),balls:[{x:26,z:32,vx:0,vz:0},{x:29,z:32,vx:0,vz:0},{x:32,z:32,vx:0,vz:0}],hoops:[false,false,false],bouncers:[],events:[],celebrated:false,solid:[]};restoreNest(s,saved);s.activities=createActivities();return s}
 export function missions(s){return[{name:'Ring in a ridiculous morning',short:'Treetop bell duet',detail:'Climb the two ladders with E / Enter. Ring both bells together.',done:s.bells.every(Boolean),progress:s.bells.every(Boolean)?'Duet complete':'Two monkeys · two bells',zone:ZONES[0]},{name:'Start an extremely loud band',short:'Play the jungle melody',detail:'Play DO · MI · SO · LA · SO · DO. Both monkeys must play a note.',done:s.songComplete,progress:s.songComplete?'Standing ovation':`${s.band}/6 notes · ${new Set(s.bandPlayers).size}/2 musicians`,zone:ZONES[1]},{name:'Give the island a bubble bath',short:'Power the bubble fountain',detail:'Stand on a different blue pedal each. Keep both pressed for four seconds.',done:s.bubbles,progress:s.bubbles?'Bubbles everywhere':`${Math.min(100,Math.floor(s.foam/4*100))}% bubble power`,zone:ZONES[2]},{name:'Invent coconut bowling',short:'Bowl over six pineapple pins',detail:'Stand behind a coconut and press E / Enter to roll it down the lane.',done:s.pins.every(p=>p.down),progress:`${s.pins.filter(p=>p.down).length}/6 pins toppled`,zone:ZONES[3]},{name:'Teach monkeys to fly',short:'Bounce through three sky hoops',detail:'Jump on each trampoline. Both monkeys need a turn in the air.',done:s.hoops.every(Boolean)&&new Set(s.bouncers).size===2,progress:`${s.hoops.filter(Boolean).length}/3 hoops · ${new Set(s.bouncers).size}/2 monkeys`,zone:ZONES[4]}]}
 export function emit(s,text,type='info',x=0,z=0,details={}){if(type==='win'||type==='complete')s.players.forEach(p=>p.cheer=2.4);s.events.push({...details,text,type,x,z});if(s.events.length>20)s.events.shift()}
 export function nearZone(p){return [...ZONES].sort((a,b)=>dist(p,a)-dist(p,b))[0]}
@@ -61,6 +62,7 @@ export function ook(s,i){
   const copied=tryMimic(s,i);
   if(!copied&&!p.mimic)noticeMischief(s.fisherman,p,i,'ook');
   p.ook=1.6;p.idle=0;
+  ookNeighbors(s,i);
   emit(s,'OOK!','ook',p.x,p.z,{player:i});
   const other=1-i,friend=s.players[other];
   if(!copied&&!friend.mimic&&dist(p,friend)<7&&Math.abs(p.y-friend.y)<2&&!friend.reaction){
@@ -108,14 +110,16 @@ const drum=DRUMS.findIndex(d=>dist(p,d)<2.7);if(drum>=0&&!s.songComplete){if(dru
 const ball=s.balls.filter(b=>dist(p,b)<3.4).sort((a,b)=>dist(p,a)-dist(p,b))[0];if(ball){ball.vx=0;ball.vz=-17;emit(s,'Coconut coming through!','roll',ball.x,ball.z);return}
 if(climbNest(s,i))return;
 if(depositAtNest(s,i))return;
+if(interactActivity(s,i))return;
 if(interactHat(s.fisherman,p,i))return;
 if(interactFind(s,i))return;
 const zone=nearZone(p);emit(s,missions(s).find(m=>m.zone.id===zone.id).detail)}
 export function step(s,dt,axes){dt=Math.max(0,Math.min(.04,dt));s.time+=dt;stepOokReactions(s,dt);stepMimicry(s,dt);stepFisherman(s.fisherman,dt,s.players,s.solid);
 s.players.forEach((p,i)=>{if(isCarried(s.fisherman,i)){returnCarriedFind(s,i);p.ook=Math.max(0,p.ook-dt);return;}for(const key of ['bump','bumpCooldown','land','cheer','hello'])p[key]=Math.max(0,p[key]-dt);let [dx,dz]=axes[i]||[0,0],len=Math.hypot(dx,dz);p.moving=len>0;p.idle=len>0||p.air?0:p.idle+dt;if(len>0){dx/=Math.max(1,len);dz/=Math.max(1,len);const speed=8.3,x=p.x+dx*speed*dt,z=p.z+dz*speed*dt;const blocked=(x,z)=>s.solid.some(o=>p.y<o.h&&Math.hypot(x-o.x,z-o.z)<o.r+.48);if((blocked(x,p.z)||blocked(p.x,z))&&p.bumpCooldown<=0){p.bump=1;p.bumpCooldown=1.2;emit(s,i?'Oops!':'BONK!','bonk',p.x,p.z)}if(!blocked(x,p.z))p.x=Math.max(-46,Math.min(46,x));if(!blocked(p.x,z))p.z=Math.max(-43,Math.min(43,z));p.angle=Math.atan2(dx,dz);p.walk+=dt*13}
-const ground=nestFloor(p)|| (p.y>5.8&&platformHeight(p)>0?7:(p.x>19&&p.x<37&&p.z>-33&&p.z<-23?.65:0));if(p.y<ground){p.y=ground;p.vy=0;p.air=false;}if(p.y>ground+.01||p.vy!==0){p.vy-=22*dt;p.y+=p.vy*dt;p.air=true;if(p.y<=ground){if(p.vy < -3){p.land=.36;emit(s,'puff','land',p.x,p.z)}p.y=ground;p.vy=0;p.air=false}}else p.air=false;
+const ground=activityFloor(p)||nestFloor(p)|| (p.y>5.8&&platformHeight(p)>0?7:(p.x>19&&p.x<37&&p.z>-33&&p.z<-23?.65:0));if(p.y<ground){p.y=ground;p.vy=0;p.air=false;}if(p.y>ground+.01||p.vy!==0){p.vy-=22*dt;p.y+=p.vy*dt;p.air=true;if(p.y<=ground){if(p.vy < -3){p.land=.36;emit(s,'puff','land',p.x,p.z)}p.y=ground;p.vy=0;p.air=false}}else p.air=false;
 TRAMPOLINES.forEach((t,j)=>{if(dist(p,t)<1.75&&p.y<.65&&p.vy<=0){p.vy=16;p.air=true;emit(s,'Boing!','bounce',p.x,p.z)}if(dist(p,t)<2&&p.y>4.1&&!s.hoops[j]){s.hoops[j]=true;s.bouncers.push(i);emit(s,'Sky hoop! That is definitely not how walking works.','win',p.x,p.z)}else if(dist(p,t)<2&&p.y>4.1&&!s.bouncers.includes(i)){s.bouncers.push(i)}});
 p.ook=Math.max(0,p.ook-dt);depositAtNest(s,i)});
+stepActivities(s,dt);
 // Soft body contact. Separate gently, never push a monkey through scenery.
 const a=s.players[0],b=s.players[1],gap=dist(a,b);if(!isCarried(s.fisherman,0)&&!isCarried(s.fisherman,1)&&gap<1.04&&Math.abs(a.y-b.y)<1.5){const nx=gap>.001?(b.x-a.x)/gap:1,nz=gap>.001?(b.z-a.z)/gap:0,push=(1.04-gap)/2;for(const [p,sign] of [[a,-1],[b,1]]){const x=p.x+nx*push*sign,z=p.z+nz*push*sign;if(!s.solid.some(o=>p.y<o.h&&Math.hypot(x-o.x,z-o.z)<o.r+.48)){p.x=Math.max(-46,Math.min(46,x));p.z=Math.max(-43,Math.min(43,z));}}if((a.moving||b.moving)&&a.bumpCooldown<=0&&b.bumpCooldown<=0){for(const p of [a,b]){p.bump=.85;p.bumpCooldown=1.2;p.hello=1.6;}emit(s,'Boop!','bonk',(a.x+b.x)/2,(a.z+b.z)/2)}}
 const onPads=PADS.map(t=>s.players.some(p=>dist(p,t)<1.9&&p.y<1));if(onPads.every(Boolean)&&!s.bubbles){s.foam+=dt;if(s.foam>=4){s.bubbles=true;emit(s,'Bubble bath activated. The entire island says thank you!','win',-29,25)}}else if(!s.bubbles)s.foam=Math.max(0,s.foam-dt*.4);

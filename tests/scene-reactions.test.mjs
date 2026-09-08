@@ -36,7 +36,7 @@ test('real character rigs render reaction states, freeze on pause, and recover o
     }
     const THREE={...RealThree,WebGLRenderer:TestRenderer};
   `);
-  for(const name of ['game-core.mjs','monkey-personality.mjs','fisherman.mjs','fisherman-personality.mjs','fisherman-movement.mjs','nest.mjs','nest-storage.mjs','mimicry.mjs']){
+  for(const name of ['game-core.mjs','monkey-personality.mjs','fisherman.mjs','fisherman-personality.mjs','fisherman-movement.mjs','nest.mjs','nest-storage.mjs','mimicry.mjs','island-activities.mjs','island-scene.mjs']){
     source=source.replace(`from './${name}'`,`from '${new URL('../public/'+name,import.meta.url).href}'`);
   }
   const game=await import('data:text/javascript;base64,'+Buffer.from(source+'\nexport {state,scene,monkeys,birds,fishermanRig,fishermanHat,findMeshes,wantFrames};').toString('base64'));
@@ -106,6 +106,20 @@ test('real character rigs render reaction states, freeze on pause, and recover o
   assert(game.state.nest.deposited.includes('cushion'));
   assert(game.findMeshes[0].position.y>5);
   assert.equal(count(),objects,'nest deposits and restart reuse the same physical objects');
+  // Exercise real new props through flying, pause, auto-catch, and permanent display.
+  Object.assign(game.state.players[0],{x:-33,z:4,y:0,air:false});
+  Object.assign(game.state.players[1],{x:-29,z:4,y:0,air:false});
+  key('KeyE');advance(.1);assert.equal(game.findMeshes[4].parent,game.monkeys[0].arms[1]);
+  key('KeyE');advance(.3);assert.equal(game.findMeshes[4].parent,game.scene);
+  assert(game.findMeshes[4].position.y>2,'the can visibly arcs between monkeys');
+  nodes.get('pause').onclick();const flyingY=game.findMeshes[4].position.y;
+  advance(1);assert.equal(game.findMeshes[4].position.y,flyingY);
+  nodes.get('resume').onclick();advance(.6);assert.equal(game.findMeshes[4].parent,game.monkeys[1].arms[1]);
+  Object.assign(game.state.players[1],{x:-12,z:38,y:0});key('Enter');advance(.1);
+  assert(game.state.nest.deposited.includes('watering-can'));
+  assert.equal(game.findMeshes[4].parent,game.scene);
+  assert.equal(game.findMeshes[4].position.x,-33,'a spare returns to the garden');
+  nodes.get('restart').onclick();advance(.1);assert.equal(count(),objects);
   const reloaded=await import('data:text/javascript;base64,'+Buffer.from(source+'\nexport {state,findMeshes};\n// Fresh page, same browser storage.').toString('base64'));
   now+=20;frame(now);
   assert(reloaded.state.nest.deposited.includes('cushion'));

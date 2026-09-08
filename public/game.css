@@ -3,4 +3,5 @@
 
 .mission b{font-size:14px}.mission small{font-size:12px}.player span{font-size:12px}.tools button{font-size:14px}@media(max-width:950px){.player span{font-size:11px}.tools button{font-size:12px}}@media(max-width:650px){.player span{display:none}.mission b{font-size:13px}.mission small{font-size:12px}.tools button{font-size:12px}}
 
+#missionPanel{max-height:calc(100dvh - 235px);overflow-y:auto}#bonusActivities summary{cursor:pointer;padding:14px 17px;font-weight:900;font-size:14px;background:#f4e5b5}#bonusActivities .num{font-size:18px}#bonusActivities .mission{padding:10px 0}@media(max-width:650px){#missionPanel{max-height:45dvh}}
 .player b em{font:700 11px Nunito,system-ui;font-style:normal;color:#cad7bb;margin-left:6px}@media(max-width:650px){.player b em{display:none}}
