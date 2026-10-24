@@ -16,7 +16,7 @@ export function fishermanFacing(f){
 }
 
 export function createFisherman(){
-  return {routine:0,clock:0,reaction:null,missingNoticed:false,gestureCycle:0,social:null,pendingTheft:null,
+  return {routine:0,clock:0,reaction:null,missingNoticed:false,gestureCycle:0,social:null,pendingTheft:null,pendingItem:null,
     x:FISHERMAN.x,z:FISHERMAN.z,previousX:FISHERMAN.x,previousZ:FISHERMAN.z,facing:Math.PI,walk:0,
     motion:{kind:'idle',player:null,age:0},trail:[],
     attention:[0,0],noticeCooldown:[0,0],seenJump:[0,0],lastNoticed:null,
@@ -66,24 +66,27 @@ function reactToTheft(f,i){
   f.missingNoticed=true;
 }
 
+export function alertFishermanTheft(f,i,item='fisherman-hat'){
+  if(f.motion.kind==='carry'||(f.motion.kind==='chase'&&f.motion.player!==i)){
+    f.pendingTheft=i;f.pendingItem=item;
+  }else if(f.motion.kind==='chase'){
+    f.motion.age=0;f.motion.stuck=0;
+  }else reactToTheft(f,i);
+}
+
 export function interactHat(f,p,i){
   const action=hatAction(f,p,i);
   if(!action)return false;
   if(action==='take'){
-    const seen=fishermanSees(f,p);
     f.hat.place='held';f.hat.heldBy=i;p.heldItem='fisherman-hat';
-    if(seen){
-      // Recovery is interruptible. A pursuit or carry must finish safely first;
-      // remember the witnessed action without swapping its current target.
-      if(f.motion.kind==='chase'||f.motion.kind==='carry')f.pendingTheft=i;
-      else reactToTheft(f,i);
-    }
+    // Theft is always noticed, including behind him and during recovery.
+    alertFishermanTheft(f,i);
   }else{
     p.heldItem=null;f.hat.heldBy=null;
     f.hat.place=action==='return'?'stool':'ground';
     f.hat.x=action==='return'?HAT_HOME.x:p.x;
     f.hat.z=action==='return'?HAT_HOME.z:p.z;
-    if(action==='return'){f.missingNoticed=false;f.pendingTheft=null;}
+    if(action==='return'){f.missingNoticed=false;if(!f.pendingItem||f.pendingItem==='fisherman-hat'){f.pendingTheft=null;f.pendingItem=null;}}
   }
   return true;
 }
@@ -101,7 +104,8 @@ export function stepFisherman(f,dt,players=[],solid=[]){
     if(f.pendingTheft!==null&&f.motion.kind!=='chase'&&f.motion.kind!=='carry'){
       const thief=f.pendingTheft;
       f.pendingTheft=null;
-      if(f.hat.place==='held'&&f.hat.heldBy===thief)reactToTheft(f,thief);
+      if(players[thief]?.heldItem===(f.pendingItem??'fisherman-hat'))reactToTheft(f,thief);
+      f.pendingItem=null;
     }
     if(f.motion.kind!=='idle'){
       f.social=null;

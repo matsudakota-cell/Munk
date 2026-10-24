@@ -7,7 +7,7 @@ export function neighborPose(npc,kind,t,celebrating){
     hop:celebrating?Math.abs(Math.sin(t*7))*.3:0,
     arms:celebrating?[-1.9,-2.3]:reacting?(kind===0?[-.9,-1.6]:[-1.5,-.8]):[Math.sin(t*2)*.12,-.1],
     tilt:reacting?Math.sin(beat*10)*.15:Math.sin(t)*.05,
-    eyes:reacting?1.3:Math.sin(t*2.1)>.985?.12:1,
+    eyes:reacting?1.1:Math.sin(t*2.1)>.985?.12:1,
     mouth:reacting||celebrating?1:.18,
     facing:reacting,
   };

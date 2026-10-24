@@ -21,7 +21,7 @@ test('repeat theft interrupts rest or returning instead of being forgotten',()=>
 test('five complete hat theft and catch cycles remain repeatable',()=>{
  const s=ready(),f=s.fisherman;
  for(let cycle=0;cycle<5;cycle++){
-  Object.assign(s.players[0],{x:14,z:37,y:0,air:false});f.routine=7;
+  Object.assign(s.players[0],{x:14,z:37,y:0,air:false});
   interact(s,0);advance(s,1.25);assert.equal(f.motion.kind,'chase');
   advance(s,20);assert.equal(f.motion.kind,'idle');assert.equal(f.hat.place,'stool');
   assert.equal(f.trail.length,0);assert.equal(f.pendingTheft,null);
@@ -104,7 +104,7 @@ test('ordinary jumps do not cancel a chase or permit a catch in midair',()=>{
 
 test('jumping with a stolen hat is noticed during flight and leads to real pursuit',()=>{
  const s=ready(),f=s.fisherman;Object.assign(s.players[0],{x:14,z:37});
- interact(s,0);assert.equal(f.reaction,null,'theft was unseen');
+ interact(s,0);assert.equal(f.reaction?.tier,3,'even theft behind him starts a chase');
  let pursuitTicks=0;
  for(let n=0;n<1200;n++){
   if(n%40===0)jump(s,0);

@@ -36,10 +36,10 @@ test('real character rigs render reaction states, freeze on pause, and recover o
     }
     const THREE={...RealThree,WebGLRenderer:TestRenderer};
   `);
-  for(const name of ['game-core.mjs','monkey-personality.mjs','fisherman.mjs','fisherman-personality.mjs','fisherman-movement.mjs','nest.mjs','nest-storage.mjs','mimicry.mjs','island-activities.mjs','island-scene.mjs']){
+  for(const name of ['game-core.mjs','monkey-personality.mjs','fisherman.mjs','fisherman-personality.mjs','fisherman-movement.mjs','nest.mjs','nest-storage.mjs','mimicry.mjs','island-activities.mjs','island-scene.mjs','belongings.mjs','people-scene.mjs']){
     source=source.replace(`from './${name}'`,`from '${new URL('../public/'+name,import.meta.url).href}'`);
   }
-  const game=await import('data:text/javascript;base64,'+Buffer.from(source+'\nexport {state,scene,monkeys,birds,fishermanRig,fishermanHat,findMeshes,wantFrames};').toString('base64'));
+  const game=await import('data:text/javascript;base64,'+Buffer.from(source+'\nexport {state,scene,monkeys,birds,fishermanRig,fishermanHat,findMeshes,wantFrames,neighborhoods,people,playDisplays};').toString('base64'));
   function advance(seconds){for(let n=0;n<Math.ceil(seconds/.02);n++){now+=20;frame(now)}}
   function key(code){listeners.get('keydown')({code,repeat:false,target:{tagName:'DIV'},preventDefault(){}})}
   const count=()=>{let n=0;game.scene.traverse(()=>n++);return n};
@@ -120,6 +120,21 @@ test('real character rigs render reaction states, freeze on pause, and recover o
   assert.equal(game.findMeshes[4].parent,game.scene);
   assert.equal(game.findMeshes[4].position.x,-33,'a spare returns to the garden');
   nodes.get('restart').onclick();advance(.1);assert.equal(count(),objects);
+  // Real scene obstacles must still allow each owner to reclaim each prop.
+  for(const id of ['watering-can','fruit-basket','trowel','bananas','tackle-box','thermos','sandwich','teapot','paintbrush','palette']){
+    nodes.get('restart').onclick();advance(.1);
+    const item=game.state.finds.find(o=>o.id===id);
+    Object.assign(game.state.players[0],{x:item.x,z:item.z,y:0,air:false,vy:0});
+    Object.assign(game.state.players[1],{x:0,z:18,y:0});
+    key('KeyE');assert.equal(game.state.players[0].heldItem,id);
+    advance(30);assert.equal(game.state.players[0].heldItem,null,id+' owner reaches the real scene prop');
+  }
+  for(const r of [...game.neighborhoods.rigs,...game.people.rigs])for(const eye of r.eyes){
+    assert.equal(eye.children.length,2,'pupil and eye white share the blinking parent');
+    assert.equal(eye.children[0].scale.y,.16,'animation never stretches eye anatomy');
+    assert(eye.scale.y<=1.1);
+  }
+  nodes.get('restart').onclick();advance(.1);
   const reloaded=await import('data:text/javascript;base64,'+Buffer.from(source+'\nexport {state,findMeshes};\n// Fresh page, same browser storage.').toString('base64'));
   now+=20;frame(now);
   assert(reloaded.state.nest.deposited.includes('cushion'));

@@ -6,14 +6,14 @@ import {fishermanPose} from '../public/fisherman-personality.mjs';
 const advance=(s,n)=>{for(let t=0;t<n;t+=.025)step(s,.025,[[0,0],[0,0]])};
 function setup(){const s=createState();Object.assign(s.players[0],{x:14,z:37});return s;}
 
-test('seen theft double-takes immediately; unseen theft waits for a shoreward glance',()=>{
+test('theft always double-takes, even while facing the pond',()=>{
  const s=setup(),f=s.fisherman;
  f.routine=7;assert(fishermanSees(f,s.players[0]));interact(s,0);
  assert.equal(f.reaction.kind,'double_take');
  advance(s,5.5);assert.equal(f.reaction,null);
- const sneaky=setup();interact(sneaky,0);assert.equal(sneaky.fisherman.reaction,null);
- advance(sneaky,5);assert.equal(sneaky.fisherman.reaction,null);
- advance(sneaky,1.5);assert.equal(sneaky.fisherman.reaction.kind,'discover_missing');
+ const sneaky=setup();assert(!fishermanSees(sneaky.fisherman,sneaky.players[0]));
+ interact(sneaky,0);assert.equal(sneaky.fisherman.reaction.kind,'double_take');
+ advance(sneaky,1.25);assert.equal(sneaky.fisherman.motion.kind,'chase');
  advance(sneaky,20);assert.equal(sneaky.fisherman.reaction,null,'does not rediscover forever');
 });
 
@@ -32,7 +32,7 @@ test('range, height and direction apply; hat never gates controls or adds progre
  s.players[0].x=14;interact(s,0);jump(s,0);ook(s,0);step(s,.04,[[1,0],[0,0]]);
  assert(s.players[0].x>14&&s.players[0].y>0&&s.players[0].ook>0);
  assert.deepEqual(missions(s),before);
- assert.equal(fishermanSees(s.fisherman,{x:FISHERMAN.x,z:40,y:0}),false);
+ assert.equal(fishermanSees({...s.fisherman,reaction:null,routine:0},{x:FISHERMAN.x,z:40,y:0}),false);
 });
 
 test('acting is finite and decisions tick at eight Hz',()=>{

@@ -1,3 +1,5 @@
+import {OWNERS} from './belongings.mjs';
+import {makeNeighbor,applyNeighborMotion} from './neighbor-rig.mjs';
 import {NEIGHBORS} from './island-activities.mjs';
 import {neighborPose} from './neighbor-personality.mjs';
 
@@ -6,28 +8,7 @@ export function buildNeighborhoods({group,box,ball,cyl,tube,textSprite,terrainDi
   NEIGHBORS.forEach((n,j)=>{
     terrainDisc(n.x,n.z,10,j?'#d6c285':'#a8c777');path([[j?17:-17,0],[n.x,0]],3.6);
     textSprite(n.name,n.x,5.8,6,1.05);
-    const g=group(n.x,0,-7),body=group();g.add(body);
-    // Tilly: tall apron, round glasses, a leafy bun. Bongo: striped shirt,
-    // round belly, enormous moustache, banana-shaped hat decoration.
-    ball(j?'#f3aa6c':'#658e67',0,1.25,0,j?[.95,1,.62]:[.6,.85,.45],body);
-    box(j?'#f8e3b0':'#e6d093',0,1.25,.48,[j?1.5:.8,1.15,.13],body);
-    if(j)for(let y=.8;y<1.9;y+=.25)box('#d57759',0,y,.57,[1.35,.1,.06],body);
-    const head=group(0,2.5,0);body.add(head);ball('#e6ba8d',0,0,0,[.56,.62,.48],head);
-    const eyes=[];
-    for(const side of [-1,1]){
-      if(!j)ball('#506858',side*.23,.08,.44,[.22,.22,.07],head);
-      const eye=ball('#fff6dd',side*.22,.09,.5,[.14,.17,.06],head);eyes.push(eye);
-      ball('#344e3e',side*.22,.08,.558,[.06,.09,.03],head);
-      if(j)ball('#664c3b',side*.18,-.2,.5,[.29,.12,.1],head);
-      cyl('#4e6952',side*.3,.37,0,.2,.7,body);ball('#685841',side*.3,.12,.16,[.27,.16,.39],body);
-    }
-    ball('#dcad7f',0,-.06,.55,[.16,.16,.16],head);
-    const mouth=ball('#814f43',0,-.31,.44,[.15,.14,.06],head);
-    if(j){cyl('#e8c362',0,.52,0,.75,.12,head);cyl('#e8c362',0,.67,0,.43,.25,head);tube([[-.3,.85,0],[0,1.05,0],[.3,.95,0]],.1,'#ffe277',head);}
-    else{ball('#74604c',0,.36,-.2,[.57,.4,.37],head);ball('#74604c',0,.68,-.2,[.32,.33,.3],head);ball('#ffcd71',.23,.73,0,[.18,.14,.1],head);}
-    const arms=[];for(const side of [-1,1]){const arm=group(side*(j?.85:.55),1.9,0);body.add(arm);cyl(j?'#f3aa6c':'#658e67',0,-.35,0,.18,.75,arm);ball('#e6ba8d',0,-.8,0,[.2,.22,.19],arm);arms.push(arm);}
-    textSprite(j?'BONGO':'TILLY',n.x,4.3,-7,.65);
-    rigs.push({g,body,head,eyes,mouth,arms});
+    rigs.push(makeNeighbor(OWNERS[j],j,{group,box,ball,cyl,tube,textSprite}));
 
     const holdMark=terrainDisc(n.hold.x,n.hold.z,1.6,'#ffe8a1',.12);
     const useMark=terrainDisc(n.use.x,n.use.z,1.6,'#a9e1e6',.12);
@@ -63,6 +44,7 @@ export function buildNeighborhoods({group,box,ball,cyl,tube,textSprite,terrainDi
       r.body.position.y=pose.hop;r.body.rotation.z=pose.lean;r.head.rotation.z=pose.tilt;
       r.g.rotation.y=pose.facing?Math.atan2(s.players[a.npc.target].x-n.x,s.players[a.npc.target].z+7):Math.sin(t*.5)*.2;
       r.eyes.forEach(e=>e.scale.y=pose.eyes);r.mouth.scale.y=pose.mouth;r.arms.forEach((arm,k)=>{arm.rotation.x=pose.arms[k];arm.rotation.z=(k?1:-1)*(a.splash>0?.5:0);});
+      applyNeighborMotion(r,s.owners[j],t);
       station.holdMark.material=mat(a.holder===null?'#ffe8a1':'#84cc9e');station.useMark.material=mat(a.anchorDone?'#84cc9e':'#a9e1e6');
       station.mechanism.rotation.z=a.holder===null?Math.sin(t)*.07:j?t*3:Math.sin(t*4)*.2;
       station.ladder.visible=j?a.splash>0:a.holder!==null||s.players.some(p=>p.y>2.6&&Math.abs(p.x+29)<2.2&&Math.abs(p.z+5)<2);

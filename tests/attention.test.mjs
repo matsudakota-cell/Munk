@@ -17,14 +17,14 @@ test('witnessed antics rise through exactly three tiers, independently for each 
  assert(f.attention[1]>0&&f.attention[1]<22);
 });
 
-test('unseen actions, missing hats and handoffs do not transfer attention',()=>{
+test('unseen ooks stay unnoticed but every theft adds attention only to its taker',()=>{
  const f=createFisherman(),a={...p},b={...p};
  noticeMischief(f,a,0,'ook');assert.deepEqual(f.attention,[0,0]);
- interactHat(f,a,0);tick(f,6.5);assert.deepEqual(f.attention,[0,0]);
+ interactHat(f,a,0);assert.deepEqual(f.attention,[60,0]);tick(f,6.5);assert.equal(f.attention[1],0);
  interactHat(f,a,0);assert.equal(f.hat.place,'stool');
  // Taking the hat is a new action by this monkey, never inherited blame.
  f.reaction=null;f.routine=7;interactHat(f,b,1);
- assert.equal(f.attention[0],0);assert.equal(f.attention[1],60);
+ assert(f.attention[0]>0&&f.attention[0]<60);assert.equal(f.attention[1],60);
  assert.equal(noticeMischief(f,{...p,y:7},0,'ook'),false);
  assert.equal(noticeMischief(f,{...p,x:40},0,'ook'),false);
 });

@@ -1,11 +1,13 @@
+import {EXTRA_BELONGINGS} from './belongings.mjs';
 export const NEST={x:-12,z:34,y:5,ladder:{x:-12,z:38}};
 export const FINDS=[
   {id:'cushion',name:'cushion',kind:'soft',x:-9,z:21},
   {id:'feather',name:'feather',kind:'soft',x:-17,z:12},
   {id:'shell',name:'pearly shell',kind:'shiny',x:9,z:24},
   {id:'spoon',name:'shiny spoon',kind:'shiny',x:20,z:7},
-  {id:'watering-can',name:'watering can',kind:'play',x:-33,z:4},
-  {id:'fruit-basket',name:'fruit basket',kind:'play',x:33,z:4},
+  {id:'watering-can',name:'Tilly’s watering can',owner:'tilly',kind:'play',x:-33,z:4},
+  {id:'fruit-basket',name:'Bongo’s fruit basket',owner:'bongo',kind:'play',x:33,z:4},
+  ...EXTRA_BELONGINGS,
 ];
 export const NEST_IDS=['fisherman-hat',...FINDS.map(o=>o.id)];
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
@@ -20,14 +22,15 @@ export function nestSave(s){return {version:1,deposited:[...s.nest.deposited]};}
 export function restoreNest(s,saved){
   const data=cleanNestSave(saved);
   s.nest={deposited:data.deposited,revision:0};
-  s.finds=FINDS.map(o=>({...o,y:0,heldBy:null,place:data.deposited.includes(o.id)&&o.kind!=='play'?'nest':'world'}));
+  s.finds=FINDS.map(o=>({...o,homeX:o.x,homeZ:o.z,y:0,heldBy:null,place:data.deposited.includes(o.id)&&!o.owner?'nest':'world'}));
   if(data.deposited.includes('fisherman-hat')){
     s.fisherman.hat.place='nest';s.fisherman.hat.heldBy=null;s.fisherman.missingNoticed=true;
   }
 }
 export function nestDisplay(id){
   const slots=[[-3,-2.3],[-2,1.3],[2.8,-1.9],[2.3,1.3],[0,-2.5],[-3,.1],[3,.1]];
-  const [x,z]=slots[NEST_IDS.indexOf(id)]??[0,0];
+  const index=NEST_IDS.indexOf(id);
+  const [x,z]=slots[index]??[-3.6+(index-7)%4*2.4,-1.15+Math.floor((index-7)/4)*2.6];
   return {x:NEST.x+x,y:NEST.y+.2,z:NEST.z+z};
 }
 export function nestWants(s){
@@ -36,7 +39,7 @@ export function nestWants(s){
 export function depositAtNest(s,i){
   const p=s.players[i],id=p.heldItem;
   if(!insideNest(p)||!NEST_IDS.includes(id))return false;
-  const play=FINDS.find(o=>o.id===id&&o.kind==='play');
+  const play=FINDS.find(o=>o.id===id&&o.owner);
   if(s.nest.deposited.includes(id)&&!play)return false;
   const item=id==='fisherman-hat'?s.fisherman.hat:s.finds.find(o=>o.id===id);
   if(item.heldBy!==i)return false;

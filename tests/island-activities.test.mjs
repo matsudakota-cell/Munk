@@ -49,6 +49,8 @@ test('four automatic catches complete each relay with either starter and no time
 
 test('solo juggling does not award relay progress, missed catches drop safely and can be replayed',()=>{
   const s=createState(),n=NEIGHBORS[0],a=s.activities.areas[0],item=s.finds.find(o=>o.id===n.item);
+  // Isolate the relay rules from Tilly’s new pursuit; ownership has separate tests.
+  Object.assign(s.owners[0],{x:40,z:40});
   put(s.players[0],item);put(s.players[1],{x:0,z:12});interact(s,0);
   for(let k=0;k<3;k++){interact(s,0);wait(s);assert.equal(item.heldBy,0);assert.equal(a.passes,0);}
   put(s.players[1],{x:-29,z:4});interact(s,0);wait(s);assert.equal(a.passes,1);

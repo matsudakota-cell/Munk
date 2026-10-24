@@ -56,19 +56,19 @@ Phase 2 has been approved for moving on.
 
 ## Phase 3: increasingly suspicious
 
-Ook or jump where the fisherman can see you. Each monkey has their own attention: he starts oblivious, becomes suspicious with squints and muttering, then throws both hands up in exasperation. Repeat witnessed antics to get the bigger performance. A witnessed hat theft goes straight to exasperation and a quick chase, interrupting friendly mimicry; no extra ooks are needed. Quiet time gradually calms him down.
+Ook or jump where the fisherman can see you. Each monkey has their own attention: he starts oblivious, becomes suspicious with squints and muttering, then throws both hands up in exasperation. Repeat witnessed antics to get the bigger performance. Every hat or belonging theft goes straight to exasperation and a quick chase, interrupting friendly mimicry; no extra ooks are needed. Quiet time gradually calms him down.
 
-Attention drives his acting and, with Phase 4, a short chase after an exasperated performance. Unseen theft can make him discover an empty stool, but he does not blame a monkey he never saw. Passing the hat never transfers attention. Restart clears both monkeys’ attention.
+Attention drives his acting and, with Phase 4, a short chase after an exasperated performance. Theft now always triggers its owner, even from behind. Ordinary ook and jump attention still requires sight. A new pickup is attributed to that monkey; a missing object alone does not assign blame. Restart clears both monkeys’ attention.
 
 Phase 3 has been approved for moving on. More islanders are a later addition.
 
 ## Phase 4: a very short pursuit
 
-After an exasperated performance (shortened to 1.25 seconds for witnessed theft), the fisherman leaves his rod and chair to run after the monkey he saw. His run is now 6.2 units per second, up from 4.2, against the monkeys’ 8.3. He stays on foot and gives up when they reach elevated ground or escape. Ordinary jumps keep the pursuit going, but he can only catch a monkey after they land. After a short pursuit he stops to catch his breath, then walks his route back to the pond, muttering.
+After an exasperated performance (shortened to 1.25 seconds for theft), the fisherman leaves his rod and chair to run after the monkey who took his item. His run is now 6.2 units per second, up from 4.2, against the monkeys’ 8.3. He stays on foot and gives up when they reach elevated ground or escape. Ordinary jumps keep the pursuit going, but he can only catch a monkey after they land. After a short pursuit he stops to catch his breath, then walks his route back to the pond, muttering.
 
 Jumps can be noticed at any point in their visible flight, once per jump, so hopping while he turns toward you counts even if he missed takeoff.
 
-A witnessed repeat theft interrupts catching his breath or walking home. If he is already chasing or carrying a monkey, he remembers a new witnessed theft and responds after safely finishing that event, provided the new thief still holds the hat. He never switches passengers mid-carry. Interrupted pursuits retain their route back to the chair, and the hat can be stolen again after every catch.
+A repeat theft interrupts catching his breath or walking home. If he is already chasing or carrying a monkey, he remembers a new theft and responds after safely finishing that event, provided the new thief still holds that item. He never switches passengers mid-carry. Interrupted pursuits retain their route back to the chair, and the hat can be stolen again after every catch.
 
 If he catches that monkey, he gently picks them up, carries them a few steps, and puts them down. Movement and interaction resume on release; ooks still work during the lift. Only their held object returns to its original spot, and their attention resets to zero. Their partner stays free, keeps their own belongings, and cannot become the chase target. Completed missions and deposited nest treasures remain intact. No respawn screen, score penalty, or game over.
 
@@ -100,7 +100,7 @@ Mimicry and the nest are ready for the weekend playtest. The owner authorized Ph
 
 ## Phase 7: garden and fruit-stand teamwork
 
-Tilly the gardener lives west of Cloud Hoppers; Bongo the fruit seller is to the east. Both appear on the map. Tilly wears glasses and an apron; Bongo has a striped shirt, enormous moustache, and banana hat. Nearby ooks and playing with their props produce increasingly animated, per-monkey reactions that cool down over time. They currently react in place; the fisherman's repeatable chase remains his own behavior. Bigger chase acting is still a later polish task.
+Tilly the gardener lives west of Cloud Hoppers; Bongo the fruit seller is to the east. Both appear on the map. Tilly wears glasses and an apron; Bongo has a striped shirt, enormous moustache, and banana hat. Nearby ooks and playing with their props produce increasingly animated, per-monkey reactions that cool down over time. Tilly and Bongo now also leave their stations to chase a monkey who picks up their belongings. Bigger chase acting is still a later polish task.
 
 Four bonus activities appear under **New monkey business**, separately from the original five missions:
 
@@ -114,6 +114,28 @@ Either player can take either role. Pressing the existing interact button starts
 The nest can permanently display both new props. The neighbors put out spares when a prop is deposited, so collecting does not remove their catch games. Nest displays persist across reloads; bonus activity progress, like the original mission progress, starts fresh with each adventure. No buttons, camera behavior, original mission rules, or dependencies changed.
 
 Rules and NPC decisions run at 8 Hz in `island-activities.mjs`; `neighbor-personality.mjs` supplies pure poses and `island-scene.mjs` builds and animates the neighborhoods using the existing scene helpers. Tests cover both roles, all four completions, solo play, abandoned holds, missed catches, busy hands, nest spares, and the existing fisherman regressions. The children's enjoyment and visual readability still need the family playtest.
+
+## More neighbors, belongings, and replayable bowling
+
+There are now five people on the island. Poppy keeps a picnic northwest of Cloud Hoppers; Dot paints northeast of it. Their map labels and world signs help you find them.
+
+| Owner | Belongings |
+| --- | --- |
+| Fisherman | Hat, tackle box, thermos |
+| Tilly | Watering can, trowel |
+| Bongo | Fruit basket, banana bunch |
+| Poppy | Sandwich, teapot |
+| Dot | Paintbrush, palette |
+
+Every ground pickup of an owned item starts its owner's reaction and pursuit, including repeat thefts while resting or returning home. Facing away no longer hides a theft from the fisherman. New owners show an exclamation mark, run on foot, reclaim only their own held item on contact, then walk home. They give up after a short chase or when the monkey reaches high ground. They do not stun or carry monkeys; the fisherman retains his gentle carry. A second thief is queued rather than replacing the current target. Passing a relay object does not accuse the receiver of the original pickup.
+
+The eight new belongings join the nest collection. Depositing an owned find keeps a physical display and supplies a spare at its original spot, just like the can and basket. The original hat keeps its existing permanent one-off nest behavior. Loose cushion, feather, shell and spoon remain unowned finds.
+
+Tilly's eyes now use small eye whites and pupils within the same blinking group, with thin glasses frames. Blinks no longer stretch the eye geometry or leave the pupils behind. All four neighbor rigs share this corrected anatomy and have walking legs.
+
+At Coconut Lanes, use **E / Enter at the gold ↻ lever to the right of the coconuts** to restore all six pins and reset the balls. This works after a full round or a partial attempt. An earned bowling mission tick stays complete, so replaying never removes overall progress.
+
+Owner decisions are staggered at 8 Hz and reuse the existing obstacle-aware movement. Tests cover all owned finds with both players across four theft/catch cycles, actual scene obstacles, interrupted recovery, queued thieves, nest spares, corrected eye geometry, and bowling replay. No dependencies or new controls were added.
 
 ## Run locally
 
@@ -151,6 +173,10 @@ The tests cover response variety and rarity, repeatable reaction selection, inpu
 - `public/fisherman-movement.mjs` — bounded foot chases, gentle carries, safe release, and return routes.
 - `public/nest.mjs` — nest entry, collectible ownership, permanent deposits, and pictorial wants.
 - `public/nest-storage.mjs` — validated collection saves and graceful storage failure handling.
+- `public/belongings.mjs` — owner definitions and extra belongings.
+- `public/owners.mjs` — repeatable owner pursuits and object recovery.
+- `public/neighbor-rig.mjs` — shared neighbor anatomy and walking animation.
+- `public/people-scene.mjs` — Poppy, Dot, and their picnic/painting areas.
 - `public/island-activities.mjs` — the two anchor and two relay activities, plus low-frequency neighbor reactions.
 - `public/island-scene.mjs` — garden, fruit stand, and neighbor rigs using the existing scene helpers.
 - `public/neighbor-personality.mjs` — pure Tilly and Bongo acting values.

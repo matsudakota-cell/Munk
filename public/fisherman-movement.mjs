@@ -2,11 +2,11 @@
 const gap=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
 export const isCarried=(f,i)=>f.motion.kind==='carry'&&f.motion.player===i;
-const free=(x,z,solid,ignoreChair=true)=>Math.abs(x)<46&&Math.abs(z)<43&&
+export const npcGroundFree=(x,z,solid,ignoreChair=true)=>Math.abs(x)<46&&Math.abs(z)<43&&
   !(x>19&&x<37&&z>-33&&z<-23)&&
   !solid.some(o=>!(ignoreChair&&o.fishermanAnchor)&&Math.hypot(x-o.x,z-o.z)<o.r+.8);
 
-function move(f,target,speed,solid,remember=true){
+export function moveNpc(f,target,speed,solid,remember=true){
   const d=gap(f,target);if(d<.01)return false;
   const angle=Math.atan2(target.x-f.x,target.z-f.z),length=Math.min(d,speed*.125);
   // Small local detours; if scenery traps him he gives up, never walks through it.
@@ -19,6 +19,8 @@ function move(f,target,speed,solid,remember=true){
   }
   return false;
 }
+
+const free=npcGroundFree,move=moveNpc;
 
 export function startChase(f,player){
   f.motion={kind:'chase',player,age:0,stuck:0};
