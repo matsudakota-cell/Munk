@@ -31,6 +31,7 @@ export function nestDisplay(id){
   const slots=[[-3,-2.3],[-2,1.3],[2.8,-1.9],[2.3,1.3],[0,-2.5],[-3,.1],[3,.1]];
   const index=NEST_IDS.indexOf(id);
   const [x,z]=slots[index]??[-3.6+(index-7)%4*2.4,-1.15+Math.floor((index-7)/4)*2.6];
+  if(id==='gus-glasses')return {x:NEST.x,y:NEST.y+.2,z:NEST.z+.8};
   return {x:NEST.x+x,y:NEST.y+.2,z:NEST.z+z};
 }
 export function nestWants(s){
@@ -72,7 +73,7 @@ export function findAction(s,p){
 export function interactFind(s,i){
   const p=s.players[i],action=findAction(s,p);if(!action?.item)return false;
   const item=action.item;
-  if(action.kind==='take'){item.place='held';item.heldBy=i;p.heldItem=item.id;depositAtNest(s,i);}
+  if(action.kind==='take'){if(item.id==='gus-glasses')item.worn=false;item.place='held';item.heldBy=i;p.heldItem=item.id;depositAtNest(s,i);}
   else{
     item.place='world';item.heldBy=null;item.x=p.x;item.z=p.z;
     // Set down on the surface beneath the monkey, never leave a find floating mid-jump.
@@ -86,5 +87,5 @@ export function returnCarriedFind(s,i){
   const p=s.players[i],item=s.finds.find(o=>o.id===p.heldItem);
   if(!item||item.heldBy!==i)return;
   const home=FINDS.find(o=>o.id===item.id);
-  Object.assign(item,{x:home.x,z:home.z,y:0,heldBy:null,place:'world'});p.heldItem=null;
+  Object.assign(item,{x:home.x,z:home.z,y:0,heldBy:null,place:'world'});if(item.id==='gus-glasses')item.worn=true;p.heldItem=null;
 }

@@ -117,7 +117,7 @@ Rules and NPC decisions run at 8 Hz in `island-activities.mjs`; `neighbor-person
 
 ## More neighbors, belongings, and replayable bowling
 
-There are now five people on the island. Poppy keeps a picnic northwest of Cloud Hoppers; Dot paints northeast of it. Their map labels and world signs help you find them.
+There are now six people on the island, including Gus (below). Poppy keeps a picnic northwest of Cloud Hoppers; Dot paints northeast of it. Their map labels and world signs help you find them.
 
 | Owner | Belongings |
 | --- | --- |
@@ -136,6 +136,18 @@ Tilly's eyes now use small eye whites and pupils within the same blinking group,
 At Coconut Lanes, use **E / Enter at the gold ↻ lever to the right of the coconuts** to restore all six pins and reset the balls. This works after a full round or a partial attempt. An earned bowling mission tick stays complete, so replaying never removes overall progress.
 
 Owner decisions are staggered at 8 Hz and reuse the existing obstacle-aware movement. Tests cover all owned finds with both players across four theft/catch cycles, actual scene obstacles, interrupted recovery, queued thieves, nest spares, corrected eye geometry, and bowling replay. No dependencies or new controls were added.
+
+## Gus: a very self-appointed playground boss
+
+Gus hangs out west of Cloud Hoppers, south of Poppy's picnic, marked **Gus** on the map. He is a round, shorter kid in a gold shirt, with a swept-up quiff, oversized red trainers, big glasses, and a hands-on-hips swagger.
+
+- Approach him from the front and press **E / Enter** to take his glasses. He chases to get them back, and puts them on again when he catches up.
+- Stand beside either shoe with empty hands and press **E / Enter** to loosen the laces. His next chase turns into a flailing trip.
+- Give a nearby **Q / /** ook to startle him into a comic tumble, even without touching the laces.
+
+He wobbles, lands on his bottom under spinning stars, and stands back up. Repeated calls cannot restart an unfinished fall or keep him down. After a short breather, the joke is repeatable. A theft during a tumble waits for him to stand before pursuit resumes. Monkeys keep moving throughout; there is no damage or punishment. His glasses are a single takeable object that can be dropped, reclaimed, or displayed permanently in the nest, with a replacement for Gus. Restart clears loose laces and tumbles while preserving the nest.
+
+Gus rules and pure fall poses live in `public/gus.mjs`. Tests cover both players, repeat tumbles, interruption protection, pause/restart, glasses ownership and nest saving, and the actual rig through the entire fall-and-recovery animation.
 
 ## Run locally
 

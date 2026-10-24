@@ -1,5 +1,6 @@
 import {createFisherman,interactHat,stepFisherman,noticeMischief} from './fisherman.mjs';
 import {isCarried} from './fisherman-movement.mjs';
+import {loosenGusShoes,startleGus} from './gus.mjs';
 import {createOwners,noticeOwnedPickup,stepOwners} from './owners.mjs';
 import {tryMimic,stepMimicry} from './mimicry.mjs';
 import {createActivities,interactActivity,stepActivities,activityFloor,ookNeighbors} from './island-activities.mjs';
@@ -63,7 +64,7 @@ export function ook(s,i){
   const copied=tryMimic(s,i);
   if(!copied&&!p.mimic)noticeMischief(s.fisherman,p,i,'ook');
   p.ook=1.6;p.idle=0;
-  ookNeighbors(s,i);
+  ookNeighbors(s,i);startleGus(s,i);
   emit(s,'OOK!','ook',p.x,p.z,{player:i});
   const other=1-i,friend=s.players[other];
   if(!copied&&!friend.mimic&&dist(p,friend)<7&&Math.abs(p.y-friend.y)<2&&!friend.reaction){
@@ -114,6 +115,7 @@ const ball=s.balls.filter(b=>dist(p,b)<3.4).sort((a,b)=>dist(p,a)-dist(p,b))[0];
 if(climbNest(s,i))return;
 if(depositAtNest(s,i))return;
 if(interactActivity(s,i))return;
+if(loosenGusShoes(s,i))return;
 if(interactHat(s.fisherman,p,i))return;
 const heldBefore=p.heldItem;
 if(interactFind(s,i)){if(!heldBefore&&p.heldItem)noticeOwnedPickup(s,s.finds.find(o=>o.id===p.heldItem),i);return;}

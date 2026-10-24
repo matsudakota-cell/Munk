@@ -36,7 +36,7 @@ test('real character rigs render reaction states, freeze on pause, and recover o
     }
     const THREE={...RealThree,WebGLRenderer:TestRenderer};
   `);
-  for(const name of ['game-core.mjs','monkey-personality.mjs','fisherman.mjs','fisherman-personality.mjs','fisherman-movement.mjs','nest.mjs','nest-storage.mjs','mimicry.mjs','island-activities.mjs','island-scene.mjs','belongings.mjs','people-scene.mjs']){
+  for(const name of ['game-core.mjs','monkey-personality.mjs','fisherman.mjs','fisherman-personality.mjs','fisherman-movement.mjs','nest.mjs','nest-storage.mjs','mimicry.mjs','island-activities.mjs','island-scene.mjs','belongings.mjs','people-scene.mjs','gus.mjs']){
     source=source.replace(`from './${name}'`,`from '${new URL('../public/'+name,import.meta.url).href}'`);
   }
   const game=await import('data:text/javascript;base64,'+Buffer.from(source+'\nexport {state,scene,monkeys,birds,fishermanRig,fishermanHat,findMeshes,wantFrames,neighborhoods,people,playDisplays};').toString('base64'));
@@ -120,8 +120,18 @@ test('real character rigs render reaction states, freeze on pause, and recover o
   assert.equal(game.findMeshes[4].parent,game.scene);
   assert.equal(game.findMeshes[4].position.x,-33,'a spare returns to the garden');
   nodes.get('restart').onclick();advance(.1);assert.equal(count(),objects);
+  nodes.get('restart').onclick();advance(.1);
+  const gus=game.state.owners.find(n=>n.id==='gus'),gusRig=game.people.rigs[2];
+  const glasses=game.findMeshes.at(-1);assert.equal(glasses.parent,gusRig.head);
+  Object.assign(game.state.players[0],{x:gus.x,z:gus.z+2,y:0,air:false,vy:0});
+  key('KeyQ');advance(1);assert(gusRig.body.rotation.x<-.8);assert(gusRig.stars.visible);
+  nodes.get('pause').onclick();const fallAge=gus.tumble.age;advance(1);assert.equal(gus.tumble.age,fallAge);
+  nodes.get('resume').onclick();advance(2);assert.equal(gus.tumble,null);assert.equal(gusRig.body.rotation.x,0);
+  key('KeyE');advance(.1);assert.equal(glasses.parent,game.monkeys[0].arms[1]);
+  advance(10);assert.equal(glasses.parent,gusRig.head,'reclaimed glasses go back onto Gus');
+  assert.equal(count(),objects,'falls reuse the same stars and props');
   // Real scene obstacles must still allow each owner to reclaim each prop.
-  for(const id of ['watering-can','fruit-basket','trowel','bananas','tackle-box','thermos','sandwich','teapot','paintbrush','palette']){
+  for(const id of ['watering-can','fruit-basket','trowel','bananas','tackle-box','thermos','sandwich','teapot','paintbrush','palette','gus-glasses']){
     nodes.get('restart').onclick();advance(.1);
     const item=game.state.finds.find(o=>o.id===id);
     Object.assign(game.state.players[0],{x:item.x,z:item.z,y:0,air:false,vy:0});
